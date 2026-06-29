@@ -1,0 +1,3205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NVIDIA (NVDA) — DCF Model</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff; --bg2:#f8f9fb; --bg3:#eef0f4;
+  --t1:#111827; --t2:#6b7280; --t3:#9ca3af;
+  --bd:rgba(0,0,0,.09); --bd2:rgba(0,0,0,.16);
+  --blue:#1d4ed8; --blue2:#3b82f6; --blue-lt:#dbeafe;
+  --green:#15803d; --green-lt:#dcfce7;
+  --red:#b91c1c; --red-lt:#fee2e2;
+  --amber:#92400e; --amber-lt:#fef3c7;
+  --navy:#1a3150; --navy2:#243d5e;
+  --r:8px; --rl:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0f172a; --bg2:#1e293b; --bg3:#334155;
+    --t1:#f1f5f9; --t2:#94a3b8; --t3:#64748b;
+    --bd:rgba(255,255,255,.08); --bd2:rgba(255,255,255,.16);
+    --blue:#60a5fa; --blue2:#3b82f6; --blue-lt:#1e3a5f;
+    --green:#4ade80; --green-lt:#14532d;
+    --red:#f87171; --red-lt:#7f1d1d;
+    --amber:#fbbf24; --amber-lt:#451a03;
+    --navy:#1e3a5f; --navy2:#2d6bc4;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--t1);font-size:13px;line-height:1.5}
+
+/* ── HEADER ── */
+header{background:var(--navy);color:#fff;height:54px;display:flex;
+  align-items:center;justify-content:space-between;padding:0 20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);flex-shrink:0;position:sticky;top:0;z-index:100}
+.h-left{display:flex;align-items:center;gap:12px}
+.chip{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);
+  color:#fff;font-size:11px;font-weight:700;letter-spacing:.07em;padding:3px 9px;border-radius:5px}
+.h-title{font-size:15px;font-weight:600}
+.h-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:1px}
+.h-right{display:flex;align-items:center;gap:20px}
+.h-stat{text-align:right}
+.h-stat .big{font-size:18px;font-weight:700;color:#fff}
+.h-stat .sm{font-size:10px;color:rgba(255,255,255,.6)}
+.preset-bar{display:flex;gap:6px}
+.preset-btn{padding:5px 11px;border-radius:5px;border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:background .15s}
+.preset-btn:hover{background:rgba(255,255,255,.2)}
+.preset-btn.active{background:rgba(255,255,255,.28);border-color:#fff}
+
+/* ── LAYOUT ── */
+.main{display:flex;height:calc(100vh - 54px)}
+.sidebar{width:318px;flex-shrink:0;background:var(--bg2);
+  border-right:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
+.sb-body{flex:1;padding:0 14px 12px}
+.sb-foot{padding:12px 14px;border-top:1px solid var(--bd);background:var(--bg2);position:sticky;bottom:0}
+.results{flex:1;overflow-y:auto}
+
+/* ── ACCORDION ── */
+.acc{border-bottom:1px solid var(--bd)}
+.acc-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;cursor:pointer;user-select:none}
+.acc-hdr-left{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--t1)}
+.acc-hdr svg{width:14px;height:14px;stroke:var(--t2);fill:none;stroke-width:2;
+  transition:transform .2s;flex-shrink:0}
+.acc-hdr.open svg{transform:rotate(180deg)}
+.acc-body{display:none;padding-bottom:10px}
+.acc-body.open{display:block}
+.acc-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0}
+.acc-icon svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2}
+
+/* ── FORM ELEMENTS ── */
+.field{margin-bottom:9px}
+.field label{display:block;font-size:11px;color:var(--t2);margin-bottom:3px;font-weight:500}
+.hint{font-size:10px;color:var(--t3);margin-top:2px;line-height:1.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+
+input[type=number],select{
+  width:100%;padding:6px 9px;font-size:12px;border:1px solid var(--bd2);
+  border-radius:var(--r);background:var(--bg);color:var(--t1);font-family:inherit;
+  -moz-appearance:textfield;transition:border-color .15s,box-shadow .15s}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]:focus,select:focus{outline:none;border-color:var(--blue2);
+  box-shadow:0 0 0 2px rgba(59,130,246,.18)}
+select{cursor:pointer}
+
+.wacc-display{background:var(--blue-lt);border:1px solid rgba(59,130,246,.3);
+  border-radius:var(--r);padding:8px 12px;margin-bottom:10px}
+.wacc-display .label{font-size:10px;color:var(--blue);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.wacc-display .val{font-size:20px;font-weight:700;color:var(--blue)}
+.wacc-display .breakdown{font-size:10px;color:var(--t2);margin-top:2px}
+
+/* Segment rows in sidebar */
+.seg-input-row{display:grid;grid-template-columns:28px 1fr 72px 72px;gap:6px;
+  align-items:center;margin-bottom:6px}
+.seg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.seg-name-small{font-size:11px;color:var(--t1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-input-row input{font-size:11px;padding:5px 6px;text-align:center}
+.seg-hdr{display:grid;grid-template-columns:28px 1fr 72px 72px;gap:6px;
+  font-size:10px;color:var(--t3);font-weight:600;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Moat & sentiment selectors */
+.star-row{display:flex;gap:6px;margin:4px 0}
+.star-opt{flex:1;text-align:center;padding:6px 4px;border-radius:6px;border:1px solid var(--bd2);
+  cursor:pointer;font-size:10px;color:var(--t2);font-weight:600;transition:all .15s;user-select:none}
+.star-opt.selected{border-color:var(--blue2);background:var(--blue-lt);color:var(--blue)}
+.radio-row{display:flex;gap:8px;margin:4px 0}
+.radio-opt{flex:1;padding:7px;text-align:center;border-radius:6px;border:1px solid var(--bd2);
+  cursor:pointer;font-size:11px;color:var(--t2);font-weight:500;transition:all .15s;user-select:none}
+.radio-opt.selected{border-color:var(--blue2);background:var(--blue-lt);color:var(--blue)}
+.tv-extra{display:none;margin-top:8px}.tv-extra.visible{display:block}
+
+/* Buttons */
+.btn-calc{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;
+  border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.btn-calc:hover{background:var(--navy2)} .btn-calc:active{transform:scale(.98)}
+.btn-calc svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2}
+.btn-reset{width:100%;padding:6px;margin-top:5px;background:none;color:var(--t2);
+  border:1px solid var(--bd2);border-radius:var(--r);font-size:11px;cursor:pointer;font-family:inherit}
+.btn-reset:hover{background:var(--bg3);color:var(--t1)}
+
+/* ── RESULTS ── */
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:400px;color:var(--t3);gap:12px;text-align:center;padding:40px}
+.placeholder svg{width:52px;height:52px;stroke:var(--t3);fill:none;stroke-width:1.5;opacity:.45}
+.placeholder p{font-size:13px;color:var(--t2);line-height:1.7;max-width:240px}
+.placeholder strong{color:var(--t1)}
+
+.tabs-bar{display:flex;border-bottom:1px solid var(--bd);padding:0 20px;
+  position:sticky;top:0;background:var(--bg);z-index:10}
+.tab-btn{padding:11px 15px;font-size:12px;font-weight:500;cursor:pointer;
+  border:none;background:none;color:var(--t2);border-bottom:2px solid transparent;
+  margin-bottom:-1px;font-family:inherit;transition:color .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--t1)} .tab-btn.active{color:var(--blue2);border-bottom-color:var(--blue2)}
+.tab-content{padding:18px 20px}
+.rpanel{display:none} .rpanel.active{display:block}
+
+/* metric cards */
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px}
+.mc{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:13px 14px}
+.mc.accent{background:var(--green-lt);border-color:#86efac}
+.mc .lbl{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:4px}
+.mc .val{font-size:20px;font-weight:700;color:var(--t1);line-height:1.2}
+.mc .val.green{color:var(--green)} .mc .val.red{color:var(--red)}
+.mc .sub{font-size:10px;color:var(--t2);margin-top:3px}
+.up{color:var(--green)} .down{color:var(--red)}
+
+/* cards */
+.card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rl);
+  padding:15px 17px;margin-bottom:13px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card-title{font-size:12px;font-weight:600;color:var(--t1);margin-bottom:11px;
+  padding-bottom:9px;border-bottom:1px solid var(--bd)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{font-size:10px;font-weight:600;color:var(--t3);text-align:right;padding:5px 5px;
+  border-bottom:1px solid var(--bd2);white-space:nowrap;background:var(--bg2);
+  text-transform:uppercase;letter-spacing:.04em}
+th:first-child{text-align:left}
+td{padding:4px 5px;text-align:right;border-bottom:1px solid var(--bd);white-space:nowrap}
+td:first-child{text-align:left;color:var(--t2)}
+tr.r-bold td{font-weight:600;color:var(--t1)} tr.r-green td{background:var(--green-lt)}
+tr.r-blue td{background:var(--blue-lt)} tr:hover td{background:var(--bg2)}
+tr.r-green:hover td{background:#bbf7d0} tr.r-blue:hover td{background:#bfdbfe}
+tr.r-hdr td{background:var(--bg3);font-size:10px;font-weight:600;color:var(--t3);
+  text-transform:uppercase;letter-spacing:.05em}
+
+/* sensitivity */
+.sens-tbl{border-collapse:collapse;width:100%}
+.sens-tbl th{font-size:10px;font-weight:600;text-align:center;padding:5px 6px;
+  color:var(--t2);border-bottom:1px solid var(--bd2);background:var(--bg2)}
+.sens-tbl td{padding:3px 4px;text-align:center}
+.scell{display:inline-block;padding:3px 5px;border-radius:4px;font-weight:600;
+  font-size:10.5px;min-width:50px;text-align:center}
+
+/* bridge */
+.br-row{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.br-row:last-child{border:none;font-weight:700;font-size:14px;padding-top:10px}
+.br-lbl{color:var(--t2)} .br-lbl.s{color:var(--t1);font-weight:600}
+.br-val{font-weight:600}
+
+/* sentiment gauge */
+.gauge-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.gauge-row:last-child{border:none}
+.gauge-label{font-size:11px;color:var(--t2);width:160px;flex-shrink:0}
+.gauge-track{flex:1;background:var(--bg3);border-radius:10px;height:8px;overflow:hidden}
+.gauge-fill{height:8px;border-radius:10px;transition:width .4s}
+.gauge-val{font-size:11px;font-weight:600;width:60px;text-align:right}
+
+/* scenario bars */
+.scen-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.scen-row:last-child{border:none}
+.scen-name{font-size:11px;color:var(--t2);width:170px;flex-shrink:0}
+.scen-track{flex:1;background:var(--bg3);border-radius:3px;height:18px;overflow:hidden}
+.scen-fill{height:18px;border-radius:3px;transition:width .4s}
+.scen-px{font-size:12px;font-weight:700;width:52px;text-align:right}
+
+/* unified valuation result band — shared across DCF / SOTP / PEG / Multiples */
+.val-result{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.vr{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);
+    padding:11px 14px;min-width:110px;flex:1}
+.vr.vr-accent-up{background:var(--green-lt);border-color:#86efac}
+.vr.vr-accent-dn{background:var(--red-lt);border-color:#fca5a5}
+.vr .lbl{font-size:10px;color:var(--t2);font-weight:600;text-transform:uppercase;
+          letter-spacing:.05em;margin-bottom:3px}
+.vr .val{font-size:20px;font-weight:700;color:var(--t1);line-height:1.2}
+.vr .val.green{color:var(--green)}.vr .val.red{color:var(--red)}
+.vr .val.blue{color:var(--blue)}.vr .val.amber{color:var(--amber)}
+.vr .sub{font-size:10px;color:var(--t2);margin-top:3px}
+
+/* note */
+.note-box{background:var(--bg2);border-left:3px solid var(--blue2);
+  border-radius:0 var(--r) var(--r) 0;padding:10px 13px;font-size:12px;
+  color:var(--t2);line-height:1.65}
+.note-box strong{color:var(--t1)}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--t2);margin-top:8px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600}
+.bdg-gold{background:#fef3c7;color:#92400e} .bdg-green{background:var(--green-lt);color:var(--green)}
+.bdg-red{background:var(--red-lt);color:var(--red)}
+.chart-wrap{position:relative}
+.divider{height:1px;background:var(--bd);margin:12px 0}
+/* Multiples / SOTP tables */
+.data-tbl{border-collapse:collapse;font-size:12px}
+.data-tbl th{background:var(--bg3);color:var(--t2);font-weight:600;font-size:10px;
+  text-transform:uppercase;letter-spacing:.04em;padding:7px 10px;text-align:left;
+  border-bottom:2px solid var(--bd2)}
+.data-tbl td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--t1)}
+.data-tbl tr:last-child td{border-bottom:none}
+.data-tbl .r-total{background:var(--bg2);font-weight:700}
+.data-tbl .nvda-row{background:var(--blue-lt)}
+.data-tbl .med-row{background:var(--amber-lt);font-weight:600}
+.data-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.data-tbl th.num{text-align:right}
+.sotp-mult-inp{width:60px;padding:4px 6px;font-size:12px;border:1px solid var(--bd2);
+  border-radius:5px;background:var(--bg);color:var(--t1);font-family:inherit;
+  text-align:center;-moz-appearance:textfield}
+.sotp-mult-inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.sotp-mult-inp:focus{outline:none;border-color:var(--blue2);box-shadow:0 0 0 2px rgba(59,130,246,.18)}
+.mult-bar-wrap{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.mult-bar-item{flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--bd);
+  border-radius:var(--r);padding:10px 12px;text-align:center}
+.mult-bar-item .mb-val{font-size:16px;font-weight:700;color:var(--t1)}
+.mult-bar-item .mb-lbl{font-size:10px;color:var(--t2);margin-top:2px}
+.mult-bar-item.above{border-color:#86efac;background:var(--green-lt)}
+.mult-bar-item.below{border-color:#fca5a5;background:var(--red-lt)}
+/* ── Memory button & panel ── */
+.mem-btn{padding:5px 11px;border-radius:5px;border:1px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:background .15s;display:flex;align-items:center;gap:5px}
+.mem-btn:hover{background:rgba(255,255,255,.22)}
+#mem-wrap{position:relative}
+#mem-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:500;
+  width:300px;background:var(--bg);border:1px solid var(--bd2);border-radius:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,.18);overflow:hidden;display:none}
+#mem-panel.open{display:block}
+.mem-head{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bd);font-size:12px;font-weight:700;color:var(--t1)}
+.mem-head button{background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px;padding:0 2px}
+.mem-save-row{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;gap:6px}
+#mem-name-input{flex:1;padding:5px 8px;border:1px solid var(--bd2);border-radius:6px;
+  font-size:11px;font-family:inherit;outline:none;background:var(--bg);color:var(--t1)}
+#mem-name-input:focus{border-color:var(--blue)}
+.mem-save-btn{padding:5px 10px;background:var(--blue);color:#fff;border:none;
+  border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap}
+.mem-save-btn:hover{background:#1e40af}
+.mem-list{max-height:280px;overflow-y:auto}
+.mem-empty{padding:18px;text-align:center;color:var(--t3);font-size:12px}
+.mem-entry{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .12s}
+.mem-entry:hover{background:var(--bg2)}
+.mem-entry:last-child{border:none}
+.mem-entry-info{flex:1;min-width:0}
+.mem-entry-name{font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mem-entry-meta{font-size:10px;color:var(--t3);margin-top:2px}
+.mem-entry-val{font-size:11px;font-weight:700;color:var(--blue);white-space:nowrap}
+.mem-del{background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px;flex-shrink:0}
+.mem-del:hover{background:var(--red-lt);color:var(--red)}
+/* ── Waterfall view toggle ── */
+.wf-toggle{display:flex;gap:0;border:1px solid var(--bd2);border-radius:6px;overflow:hidden;margin-bottom:8px;width:fit-content}
+/* ── Financials tab toggle ── */
+.fin-btn{padding:5px 13px;font-size:11px;font-weight:600;cursor:pointer;
+  border-radius:5px;border:1px solid var(--bd2);background:var(--bg2);color:var(--t2);transition:.15s}
+.fin-btn:hover{background:var(--bd);color:var(--t1)}
+.fin-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.fin-sec td:first-child{font-weight:700;color:var(--t2);font-size:10px;text-transform:uppercase;
+  letter-spacing:.05em;background:var(--bg3);padding-top:8px}
+.fin-sub td:first-child{padding-left:20px;color:var(--t2)}
+.fin-total td{font-weight:700;border-top:1px solid var(--bd2)}
+.fin-hi td:first-child{color:var(--t1);font-weight:600}
+.fin-pct td{font-size:11px;color:var(--t3);font-style:italic}
+/* ── Price range buttons ── */
+.pr-btn{padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;
+  border-radius:5px;border:1px solid var(--bd2);background:var(--bg2);color:var(--t2);transition:.15s}
+.pr-btn:hover{background:var(--bd);color:var(--t1)}
+.pr-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.wf-tog-btn{padding:4px 14px;font-size:11px;font-weight:600;cursor:pointer;
+  border:none;background:var(--bg2);color:var(--t2);font-family:inherit;transition:background .12s}
+.wf-tog-btn:hover{background:var(--bd)}
+.wf-tog-btn.active{background:var(--blue);color:#fff}
+/* ── FCF Waterfall Table ── */
+.waterfall-scroll{overflow-x:auto;border:1px solid var(--bd);border-radius:var(--r);position:relative}
+.waterfall-tbl{border-collapse:collapse;font-size:11px;white-space:nowrap;width:max-content;min-width:100%}
+.waterfall-tbl thead th{position:sticky;top:0;z-index:1;background:var(--bg2);font-size:10px;font-weight:700;color:var(--t2);text-align:center;padding:6px 10px;border-bottom:2px solid var(--bd2)}
+.waterfall-tbl thead th:first-child{position:sticky;left:0;z-index:3;background:var(--bg2);text-align:left}
+.waterfall-tbl tbody td{padding:4px 10px;border-bottom:1px solid var(--bd);text-align:right}
+.wf-label{position:sticky;left:0;z-index:2;background:var(--bg);font-weight:500;text-align:left!important;min-width:185px;max-width:185px;border-right:2px solid var(--bd2);font-size:11px;color:var(--t1)}
+.wf-hd{background:rgba(156,163,175,.06);min-width:72px}
+.wf-pd{background:rgba(29,78,216,.04);min-width:74px}
+.wf-sep-col{width:3px;min-width:3px;padding:0!important;background:var(--bd2)!important}
+.wf-hh{background:rgba(156,163,175,.14)!important;color:var(--t2)}
+.wf-ph{background:rgba(29,78,216,.09)!important;color:#1d4ed8}
+.wf-section td{background:var(--bg2)!important;font-size:9px;font-weight:800;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;padding:3px 10px!important;text-align:left!important;border-top:1px solid var(--bd2)}
+tr.wf-revenue td{font-weight:800;font-size:12px}
+tr.wf-fcf td{background:rgba(29,78,216,.09)!important;font-weight:800;color:var(--blue,#1d4ed8);font-size:12px}
+tr.wf-fcf .wf-label{color:var(--blue,#1d4ed8)}
+tr.wf-bold td{font-weight:700}
+tr.wf-red td{color:var(--red,#ef4444)}
+tr.wf-blue td{color:var(--blue,#1d4ed8);font-weight:700}
+tr.wf-green td{color:var(--green,#16a34a)}
+tr.wf-dim td{color:var(--t3,#94a3b8);font-size:10px}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR BEAUTIFICATION — tooltips, compact grid, WACC card
+   ═══════════════════════════════════════════════════════════ */
+
+/* Tooltip on ⓘ icons */
+.tip-icon{display:inline-flex;align-items:center;justify-content:center;
+  width:13px;height:13px;border-radius:50%;border:1px solid var(--bd2);
+  color:var(--t3);font-size:8.5px;font-weight:700;cursor:help;
+  line-height:1;flex-shrink:0;position:relative;font-style:normal;
+  transition:border-color .15s,color .15s;margin-left:3px;vertical-align:middle}
+.tip-icon:hover{border-color:var(--blue2);color:var(--blue2)}
+.tip-icon::after{content:attr(data-tip);position:absolute;
+  bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);
+  width:230px;background:#1a2744;color:#e2e8f0;
+  font-size:10px;line-height:1.5;padding:8px 11px;border-radius:8px;
+  white-space:normal;pointer-events:none;opacity:0;transition:opacity .18s;
+  z-index:9999;font-weight:400;box-shadow:0 6px 20px rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.08)}
+.tip-icon:hover::after{opacity:1}
+/* flip to right-aligned for right-column inputs */
+.tip-right::after{left:auto;right:-4px;transform:none}
+
+/* Compact 3-col grid */
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+
+/* Inline label row */
+.lbl-row{display:flex;align-items:center;margin-bottom:3px}
+.lbl-row label{font-size:11px;color:var(--t2);font-weight:500;flex:1;line-height:1.2}
+
+/* WACC gradient card */
+.wacc-card{background:linear-gradient(135deg,#1a3a6e 0%,#1d4ed8 100%);
+  border-radius:10px;padding:13px 15px;margin-bottom:13px}
+@media(prefers-color-scheme:dark){
+  .wacc-card{background:linear-gradient(135deg,#0f2a55 0%,#1d4ed8 100%)}
+}
+.wacc-card-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+.wacc-card .wc-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+  color:rgba(255,255,255,.65);font-weight:700;margin-bottom:3px}
+.wacc-card .wc-val{font-size:28px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.5px}
+.wacc-card .wc-sub{font-size:10px;color:rgba(255,255,255,.55);margin-top:3px;line-height:1.4}
+.wacc-pill-row{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.wacc-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);
+  border-radius:6px;padding:5px 7px;text-align:center}
+.wacc-pill .wp-v{font-size:12px;font-weight:700;color:#fff}
+.wacc-pill .wp-l{font-size:9px;color:rgba(255,255,255,.55);margin-top:1px;line-height:1}
+
+/* Segment rows v2 */
+.seg2-grid{display:grid;grid-template-columns:12px 1fr 62px 62px;
+  gap:6px;align-items:center;margin-bottom:6px;padding:6px 7px;
+  background:var(--bg);border:1px solid var(--bd);border-radius:8px;
+  transition:border-color .15s}
+.seg2-grid:hover{border-color:var(--bd2)}
+.seg2-bar{width:3px;height:28px;border-radius:2px}
+.seg2-meta{overflow:hidden}
+.seg2-name{font-size:11px;font-weight:600;color:var(--t1);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.seg2-act{font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.seg2-inp{font-size:11px;padding:5px 4px;text-align:center;border-radius:6px;
+  border:1px solid var(--bd2);background:var(--bg2);color:var(--t1);
+  width:100%;-moz-appearance:textfield;font-family:inherit;transition:.15s}
+.seg2-inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.seg2-inp:focus{outline:none;border-color:var(--blue2);background:var(--bg);
+  box-shadow:0 0 0 2px rgba(59,130,246,.15)}
+.seg2-hdr{display:grid;grid-template-columns:12px 1fr 62px 62px;gap:6px;
+  font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:5px;padding:0 7px}
+
+/* Parameter mini-badge below inputs */
+.src-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.src-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;
+  border-radius:10px;background:var(--bg3);border:1px solid var(--bd);
+  font-size:9px;color:var(--t3);font-weight:500;white-space:nowrap}
+.src-badge strong{color:var(--t2);font-weight:700}
+
+/* Section separator label */
+.sec-sep{display:flex;align-items:center;gap:7px;margin:10px 0 7px;color:var(--t3)}
+.sec-sep span{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;white-space:nowrap}
+.sec-sep::before,.sec-sep::after{content:'';flex:1;height:1px;background:var(--bd)}
+.sec-sep::before{content:none}
+
+/* Moat/sentiment pill-style options */
+.pill-row{display:flex;gap:4px;margin:4px 0}
+.pill-opt{flex:1;padding:5px 3px;text-align:center;border-radius:20px;border:1px solid var(--bd2);
+  cursor:pointer;font-size:10px;color:var(--t2);font-weight:600;transition:all .15s;
+  user-select:none;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill-opt.selected{background:var(--blue);border-color:var(--blue);color:#fff;
+  box-shadow:0 2px 6px rgba(29,78,216,.3)}
+
+/* Compact field (less margin) */
+.field-sm{margin-bottom:7px}
+.field-sm label{display:flex;align-items:center;font-size:11px;color:var(--t2);margin-bottom:3px;font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="h-left">
+    <div class="chip">NVDA</div>
+    <div>
+      <div class="h-title">NVIDIA Corporation — DCF Model</div>
+      <div class="h-sub">Segment-based · 10-year projection · USD billions · FY ends ~January</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <div class="preset-bar">
+      <button class="preset-btn" onclick="applyPreset('bear')">Bear</button>
+      <button class="preset-btn active" onclick="applyPreset('base')">Base</button>
+      <button class="preset-btn" onclick="applyPreset('bull')">Bull</button>
+      <div id="mem-wrap">
+        <button class="mem-btn" onclick="toggleMemPanel()">💾 <span>Memory</span></button>
+        <div id="mem-panel">
+          <div class="mem-head"><span>Saved Scenarios</span><button onclick="toggleMemPanel()">✕</button></div>
+          <div class="mem-save-row">
+            <input id="mem-name-input" placeholder="Scenario name…" maxlength="30"/>
+            <button class="mem-save-btn" onclick="saveMemory()">Save</button>
+          </div>
+          <div class="mem-list" id="mem-list"><div class="mem-empty">No saved scenarios yet.<br>Adjust inputs and click Save.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="h-stat" id="price-stat">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="big" id="live-px">$210.57</div>
+        <button onclick="fetchLivePrice()" title="Refresh price"
+          style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+          color:#fff;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:14px;line-height:1">↻</button>
+      </div>
+      <div class="sm" id="live-meta">Market price · $5.10T mkt cap</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+<div class="sb-body">
+
+<!-- 1. DISCOUNT RATE -->
+<div class="acc">
+  <div class="acc-hdr open" onclick="toggleAcc(this)">
+    <div class="acc-hdr-left">
+      <div class="acc-icon" style="background:#1d4ed8"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+      Discount rate (WACC builder)
+    </div>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="acc-body open">
+    <!-- WACC gradient card -->
+    <div class="wacc-card" id="wacc-display">
+      <div class="wc-lbl">Calculated WACC</div>
+      <div class="wacc-card-top">
+        <div>
+          <div class="wc-val" id="wacc-val">—</div>
+          <div class="wc-sub" id="wacc-breakdown">Enter inputs below</div>
+        </div>
+      </div>
+      <div class="wacc-pill-row" id="wacc-pills">
+        <div class="wacc-pill"><div class="wp-v" id="wp-ke">—</div><div class="wp-l">Ke (equity)</div></div>
+        <div class="wacc-pill"><div class="wp-v" id="wp-kd">—</div><div class="wp-l">Kd after-tax</div></div>
+        <div class="wacc-pill"><div class="wp-v" id="wp-reg">—</div><div class="wp-l">Reg. premium</div></div>
+      </div>
+    </div>
+
+    <!-- Row 1: Rf · ERP · Beta -->
+    <div class="row3" style="margin-bottom:7px">
+      <div class="field-sm">
+        <label class="lbl-row">Rf (%) <i class="tip-icon" data-tip="US 10Y Treasury = 4.41% as of Jun 25 2026 (FRED/Trading Economics). Bear +20bps; Bull −20bps for easing.">ⓘ</i></label>
+        <input type="number" id="i-rf" value="4.4" step="0.1" min="0" max="10" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">ERP (%) <i class="tip-icon" data-tip="Damodaran implied US ERP = 4.23% as of Jan 1 2026 (S&P 500 at 6845.5, expected equity return 8.41%).">ⓘ</i></label>
+        <input type="number" id="i-erp" value="4.23" step="0.1" min="1" max="12" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">Beta <i class="tip-icon tip-right" data-tip="Yahoo Finance 5Y monthly: 2.20 · GuruFocus: 1.89 · Base uses midpoint 2.0. NVDA 60-day realized vol ≈55%.">ⓘ</i></label>
+        <input type="number" id="i-beta" value="2.0" step="0.05" min="0.5" max="4" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      </div>
+    </div>
+
+    <!-- Row 2: Kd · D/V · Tax -->
+    <div class="row3" style="margin-bottom:7px">
+      <div class="field-sm">
+        <label class="lbl-row">Kd (%) <i class="tip-icon" data-tip="NVDA FY26 interest exp $0.1B on $8.46B LTD. IG corporate spread ~120bps. Blended market rate ≈4.5%.">ⓘ</i></label>
+        <input type="number" id="i-kd" value="4.5" step="0.1" min="1" max="10" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">D/V (%) <i class="tip-icon" data-tip="NVDA LTD $8.46B vs ~$3.2T mkt cap → effective leverage <0.3%. Floor 5% prevents degenerate WACC.">ⓘ</i></label>
+        <input type="number" id="i-dw" value="5" step="0.5" min="0" max="40" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">Tax (%) <i class="tip-icon tip-right" data-tip="GAAP ETR FY26: 15.1% · Non-GAAP: 16.1%. FY27 guidance: 17–19% as SBC tax windfall fades (Q4 FY26 CFO Commentary).">ⓘ</i></label>
+        <input type="number" id="i-tax" value="17" step="1" min="5" max="35" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      </div>
+    </div>
+
+    <!-- Reg premium full-width -->
+    <div class="field-sm">
+      <label class="lbl-row">Regulatory risk premium (%)
+        <i class="tip-icon tip-right" data-tip="Added directly to WACC. Export controls: NVDA excluded all China DC revenue from Q2 FY27 guidance (Q1 FY27 8-K). Bear 1.5% = H20 ban extended + new chips. Base 0.5% = status quo. Bull 0% = partial licence.">ⓘ</i>
+      </label>
+      <input type="number" id="i-reg" value="0" step="0.25" min="0" max="5" oninput="updateWacc()" style="font-size:12px;padding:6px 8px">
+      <div class="src-row">
+        <span class="src-badge">0 = none</span>
+        <span class="src-badge">0.5 = moderate</span>
+        <span class="src-badge">1.5 = severe</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. SEGMENT REVENUE -->
+<div class="acc">
+  <div class="acc-hdr open" onclick="toggleAcc(this)">
+    <div class="acc-hdr-left">
+      <div class="acc-icon" style="background:#15803d"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+      Segment revenue (bottom-up)
+    </div>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="acc-body open">
+    <div class="seg2-hdr">
+      <span></span><span>Segment</span>
+      <span style="text-align:center">FY27 g%</span>
+      <span style="text-align:center">Term g%</span>
+    </div>
+
+    <div class="seg2-grid">
+      <div class="seg2-bar" style="background:#1d4ed8"></div>
+      <div class="seg2-meta">
+        <div class="seg2-name">Data Center <i class="tip-icon" data-tip="Q1 FY27: $75.2B (+92% YoY). Q2 FY27 guidance ~$83B. Hyperscaler CapEx $700B+ in 2026, $1T+ in 2027 (CNBC/MS). China revenue fully excluded from guidance.">ⓘ</i></div>
+        <div class="seg2-act">Q1 FY27: $75.2B · +92% YoY</div>
+      </div>
+      <input class="seg2-inp" type="number" id="i-dc-g1" value="72" step="5" min="-20" max="200">
+      <input class="seg2-inp" type="number" id="i-dc-gt" value="6" step="0.5" min="-5" max="20">
+    </div>
+
+    <div class="seg2-grid">
+      <div class="seg2-bar" style="background:#15803d"></div>
+      <div class="seg2-meta">
+        <div class="seg2-name">Gaming <i class="tip-icon" data-tip="Q1 FY27: $3.8B (+42% YoY). RTX 5000 Blackwell launch driving upgrade cycle. PC market CAGR ~4% (IDC). AI features (DLSS 4, neural rendering) support premium ASP.">ⓘ</i></div>
+        <div class="seg2-act">Q1 FY27: $3.8B · +42% YoY</div>
+      </div>
+      <input class="seg2-inp" type="number" id="i-gam-g1" value="40" step="5" min="-30" max="100">
+      <input class="seg2-inp" type="number" id="i-gam-gt" value="3" step="0.5" min="-5" max="15">
+    </div>
+
+    <div class="seg2-grid">
+      <div class="seg2-bar" style="background:#b45309"></div>
+      <div class="seg2-meta">
+        <div class="seg2-name">Prof. Visualization <i class="tip-icon" data-tip="DGX Spark personal AI supercomputer launched. Omniverse enterprise adoption. RTX PRO 4500 Blackwell. Workstation AI TAM doubling by 2028 (IDC).">ⓘ</i></div>
+        <div class="seg2-act">FY26: ~$0.7B · recovering</div>
+      </div>
+      <input class="seg2-inp" type="number" id="i-pv-g1" value="28" step="5" min="-20" max="80">
+      <input class="seg2-inp" type="number" id="i-pv-gt" value="3" step="0.5" min="-5" max="15">
+    </div>
+
+    <div class="seg2-grid">
+      <div class="seg2-bar" style="background:#b91c1c"></div>
+      <div class="seg2-meta">
+        <div class="seg2-name">Automotive <i class="tip-icon tip-right" data-tip="FY26: $2.35B (+38.7% YoY). DRIVE Thor wins: BYD, Hyundai, Geely, Mercedes, Uber. Halos OS. AV TAM $300B+.">ⓘ</i></div>
+        <div class="seg2-act">FY26: $2.35B · +39% YoY</div>
+      </div>
+      <input class="seg2-inp" type="number" id="i-auto-g1" value="55" step="5" min="-10" max="100">
+      <input class="seg2-inp" type="number" id="i-auto-gt" value="8" step="0.5" min="-5" max="25">
+    </div>
+
+    <div class="seg2-grid">
+      <div class="seg2-bar" style="background:#6b7280"></div>
+      <div class="seg2-meta">
+        <div class="seg2-name">OEM & Other <i class="tip-icon tip-right" data-tip="FY26: $0.6B actual. Networking, embedded systems. 10-K FY26.">ⓘ</i></div>
+        <div class="seg2-act">FY26: $0.6B · networking</div>
+      </div>
+      <input class="seg2-inp" type="number" id="i-oem-g1" value="8" step="5" min="-20" max="50">
+      <input class="seg2-inp" type="number" id="i-oem-gt" value="2" step="0.5" min="-5" max="10">
+    </div>
+
+    <div class="divider" style="margin-top:8px"></div>
+    <div class="field-sm" style="margin-top:8px">
+      <label class="lbl-row">Growth deceleration path
+        <i class="tip-icon tip-right" data-tip="Controls how fast growth fades from FY27 spike to terminal rate. Convex (α=0.6): drops fast then flattens — Bear. Linear (α=1.0): equal annual steps — Base. Concave (α=1.6): sustains high then fades — Bull supercycle.">ⓘ</i>
+      </label>
+      <div class="pill-row" style="margin:5px 0">
+        <div class="pill-opt" data-group="growth-shape" data-val="0.6" onclick="selectOpt(this)">Convex<br><span style="font-size:9px;font-weight:400;opacity:.7">Falls fast</span></div>
+        <div class="pill-opt selected" data-group="growth-shape" data-val="1.0" onclick="selectOpt(this)">Linear<br><span style="font-size:9px;font-weight:400;opacity:.7">Even steps</span></div>
+        <div class="pill-opt" data-group="growth-shape" data-val="1.6" onclick="selectOpt(this)">Concave<br><span style="font-size:9px;font-weight:400;opacity:.7">Stays high</span></div>
+        <div class="pill-opt" data-group="growth-shape" data-val="2.8" onclick="selectOpt(this)">S-curve<br><span style="font-size:9px;font-weight:400;opacity:.7">Late fade</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. PROFITABILITY & REINVESTMENT -->
+<div class="acc">
+  <div class="acc-hdr open" onclick="toggleAcc(this)">
+    <div class="acc-hdr-left">
+      <div class="acc-icon" style="background:#b45309"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      Profitability & reinvestment
+    </div>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="acc-body open">
+    <!-- EBIT margins -->
+    <div class="row2" style="margin-bottom:7px">
+      <div class="field-sm">
+        <label class="lbl-row">EBIT margin FY27 (%)
+          <i class="tip-icon" data-tip="FY26 GAAP EBIT = $130.4B / $193.7B = 67.4% (10-K FY26). Q2 FY27 gross margin guided 74.9–75%. Base 68% reflects Blackwell premium pricing partially offset by R&D scale.">ⓘ</i>
+        </label>
+        <input type="number" id="i-m1" value="68" step="1" min="20" max="80">
+        <div class="src-row"><span class="src-badge">FY26 actual <strong>67.4%</strong></span></div>
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">EBIT margin FY36 (%)
+          <i class="tip-icon tip-right" data-tip="Terminal margin anchor: Broadcom (platform co.) ~50–55%, Qualcomm ~25–30%. CUDA moat places NVDA closer to Broadcom. Moat rating adjusts ±4pp.">ⓘ</i>
+        </label>
+        <input type="number" id="i-m10" value="50" step="1" min="15" max="75">
+        <div class="src-row"><span class="src-badge">Broadcom peer <strong>~52%</strong></span></div>
+      </div>
+    </div>
+
+    <!-- CapEx -->
+    <div class="row2" style="margin-bottom:7px">
+      <div class="field-sm">
+        <label class="lbl-row">CapEx % rev FY27
+          <i class="tip-icon" data-tip="FY26A actual: $6.0B / $215.9B = 2.8%. Q1FY27 actual annualised: $7.0B / ~$340B rev ≈ 2.1%. Base 3% = modest infra expansion (DGX Cloud, CoWoS deposits). NVDA is fabless — chip manufacturing CapEx borne by TSMC.">ⓘ</i>
+        </label>
+        <input type="number" id="i-cx1" value="3" step="0.5" min="1" max="20">
+        <div class="src-row"><span class="src-badge">FY26A actual <strong>2.8%</strong> · Q1FY27A ann. <strong>2.1%</strong></span></div>
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">CapEx % FY36
+          <i class="tip-icon tip-right" data-tip="Mature fabless: NVDA FY26A 2.8%, Qualcomm ~3%, AMD ~3.5%, Broadcom 2–3%. CUDA ecosystem software content raises FCF margins vs pure hardware peers. Base 2.5% at terminal.">ⓘ</i>
+        </label>
+        <input type="number" id="i-cx2" value="2.5" step="0.5" min="1" max="15">
+        <div class="src-row"><span class="src-badge">Fabless mature <strong>2–3%</strong></span></div>
+      </div>
+    </div>
+
+    <!-- NWC -->
+    <div class="field-sm">
+      <label class="lbl-row">NWC intensity (% of ΔRev)
+        <i class="tip-icon tip-right" data-tip="NVDA FY26: DSO 65d, DIO 125d, Cash Conversion Cycle 133d (Alphaquery). Empirical gross NWC ~43% of ΔRev; net operating WC convention 10–15%. Base 12% = HBM3E inventory + hyperscaler AR elongation.">ⓘ</i>
+      </label>
+      <input type="number" id="i-nwc" value="12" step="0.5" min="0" max="30">
+      <div class="src-row">
+        <span class="src-badge">FY26 CCC <strong>133d</strong></span>
+        <span class="src-badge">DSO <strong>65d</strong></span>
+        <span class="src-badge">DIO <strong>125d</strong></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. MARKET SENTIMENT -->
+<div class="acc">
+  <div class="acc-hdr open" onclick="toggleAcc(this)">
+    <div class="acc-hdr-left">
+      <div class="acc-icon" style="background:#7c3aed"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+      Market sentiment & risk
+    </div>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="acc-body open">
+    <!-- Moat -->
+    <div class="field-sm">
+      <label class="lbl-row">Competitive moat <span style="font-size:9px;color:var(--t3);margin-left:4px">→ terminal margin ±4pp</span>
+        <i class="tip-icon tip-right" data-tip="Dominant (+4pp on terminal margin): CUDA ecosystem lock-in, NVLINK, software-defined data centre. Eroding (−4pp): ASICs (TPU/Trainium) interoperate with CUDA frameworks.">ⓘ</i>
+      </label>
+      <div class="pill-row">
+        <div class="pill-opt" data-group="moat" data-val="1" onclick="selectOpt(this)">Eroding</div>
+        <div class="pill-opt" data-group="moat" data-val="2" onclick="selectOpt(this)">Weak</div>
+        <div class="pill-opt selected" data-group="moat" data-val="3" onclick="selectOpt(this)">Average</div>
+        <div class="pill-opt" data-group="moat" data-val="4" onclick="selectOpt(this)">Strong</div>
+        <div class="pill-opt" data-group="moat" data-val="5" onclick="selectOpt(this)">Dominant</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- AI cycle -->
+    <div class="field-sm">
+      <label class="lbl-row">AI capex cycle <span style="font-size:9px;color:var(--t3);margin-left:4px">→ DC growth ×multiplier</span>
+        <i class="tip-icon tip-right" data-tip="Decel (×0.70): hyperscaler CapEx digestion, custom silicon taking share. Base (×1.00): Q1 FY27 trajectory maintained. Accel (×1.25): Rubin ramp beats, $1T+ 2027 CapEx (CNBC Apr 2026).">ⓘ</i>
+      </label>
+      <div class="pill-row">
+        <div class="pill-opt" data-group="ai-cycle" data-val="decel" onclick="selectOpt(this)">Decel ×0.70</div>
+        <div class="pill-opt selected" data-group="ai-cycle" data-val="base" onclick="selectOpt(this)">Base ×1.00</div>
+        <div class="pill-opt" data-group="ai-cycle" data-val="accel" onclick="selectOpt(this)">Accel ×1.25</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Export + Concentration side by side -->
+    <div class="row2" style="margin-bottom:2px">
+      <div class="field-sm">
+        <label class="lbl-row">Export controls
+          <i class="tip-icon" data-tip="None: pre-Oct 2022 regime. Moderate: H20 ban current state (−1.5pp DC terminal growth). Severe: H200-equiv. added to Entity List (−4pp). Per NVDA Q1 FY27 8-K.">ⓘ</i>
+        </label>
+        <select id="i-export" style="font-size:11px;padding:5px 7px">
+          <option value="none">None</option>
+          <option value="moderate" selected>Moderate −1.5pp</option>
+          <option value="severe">Severe −4pp</option>
+        </select>
+      </div>
+      <div class="field-sm">
+        <label class="lbl-row">Concentration
+          <i class="tip-icon tip-right" data-tip="High: 1–2 hyperscalers >60% of DC revenue → −0.5pp near-term growth. Medium: top 5 ~40% (MSFT ~19%, GOOGL ~15%, META ~13%). Low: diversified.">ⓘ</i>
+        </label>
+        <select id="i-concentration" style="font-size:11px;padding:5px 7px">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium ~40%</option>
+          <option value="high">High >60%</option>
+        </select>
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- Market sentiment -->
+    <div class="field-sm">
+      <label class="lbl-row">Market sentiment <span style="font-size:9px;color:var(--t3);margin-left:4px">→ WACC ±pp</span>
+        <i class="tip-icon tip-right" data-tip="Risk-off +1.5pp to WACC (equity risk appetite contracts). Neutral: 0pp. Risk-on −1pp (AI euphoria compresses required return). Independent of regulatory premium.">ⓘ</i>
+      </label>
+      <div class="pill-row">
+        <div class="pill-opt" data-group="mkt-sent" data-val="risk-off" onclick="selectOpt(this)">Risk-off +1.5pp</div>
+        <div class="pill-opt selected" data-group="mkt-sent" data-val="neutral" onclick="selectOpt(this)">Neutral</div>
+        <div class="pill-opt" data-group="mkt-sent" data-val="risk-on" onclick="selectOpt(this)">Risk-on −1pp</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. TERMINAL VALUE -->
+<div class="acc">
+  <div class="acc-hdr" onclick="toggleAcc(this)">
+    <div class="acc-hdr-left">
+      <div class="acc-icon" style="background:#b91c1c"><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18"/></svg></div>
+      Terminal value method
+    </div>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="acc-body">
+    <div class="radio-row" id="tv-method-row">
+      <div class="radio-opt selected" data-group="tv-method" data-val="ggm" onclick="selectOpt(this);toggleTvMethod()">Gordon growth</div>
+      <div class="radio-opt" data-group="tv-method" data-val="mult" onclick="selectOpt(this);toggleTvMethod()">Exit multiple</div>
+    </div>
+    <div class="tv-extra visible" id="tv-ggm">
+      <div class="field"><label>Terminal growth rate (%)</label>
+        <input type="number" id="i-tgr" value="3.0" step="0.25" min="0.5" max="3.5" oninput="checkTgrWaccSpread()">
+        <div class="hint">Hard cap 3.5% (long-run nominal GDP). Must be &lt; WACC by ≥2%.</div>
+        <div id="tgr-warn" style="display:none;margin-top:4px;padding:6px 10px;background:#7c2d12;color:#fca5a5;border-radius:6px;font-size:12px;font-weight:600;">⚠ TGR too close to WACC — terminal value is being mechanically inflated. Reduce TGR or raise WACC.</div>
+      </div>
+    </div>
+    <div class="tv-extra" id="tv-mult">
+      <div class="field"><label>Exit FCF multiple (×)</label>
+        <input type="number" id="i-exit-mult" value="30" step="1" min="5" max="80">
+        <div class="hint">Applied to FY2036 unlevered FCF. Current LTM P/FCF ~52×.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. MARKET DATA -->
+<div class="acc">
+  <div class="acc-hdr" onclick="toggleAcc(this)">
+    <div class="acc-hdr-left">
+      <div class="acc-icon" style="background:#6b7280"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      Market data
+    </div>
+    <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="acc-body">
+    <div class="row2">
+      <div class="field"><label>Net cash ($B)</label><input type="number" id="i-cash" value="54.09" step="1">
+        <div class="hint">FY26 10-K: Cash $10.6B + Securities $52.0B − Debt $8.5B</div>
+      </div>
+      <div class="field"><label>Shares outstanding (B)</label><input type="number" id="i-shares" value="24.30" step="0.1">
+        <div class="hint">FY26 10-K: 24,304M diluted shares</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /sb-body -->
+<div class="sb-foot">
+  <button class="btn-calc" onclick="runCalc()">
+    <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="3"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+    Calculate
+  </button>
+  <button class="btn-reset" onclick="applyPreset('base')">↺ Reset to base case</button>
+</div>
+</aside>
+
+<!-- ═══ RESULTS ═══ -->
+<section class="results">
+  <div class="placeholder" id="placeholder">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <p>Configure assumptions and press <strong>Calculate</strong> to run the model.</p>
+    <p style="font-size:11px;color:var(--t3)">Revenue is built bottom-up from 5 segments.<br>Market sentiment adjusts margins, growth & WACC.</p>
+  </div>
+  <div id="results" style="display:none">
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('summary',this)">Summary</button>
+      <button class="tab-btn" onclick="switchTab('company',this);setTimeout(loadCompanyTab,50)">Company</button>
+      <button class="tab-btn" onclick="switchTab('financials',this)">Financials</button>
+      <button class="tab-btn" onclick="switchTab('segments',this)">Segments</button>
+      <button class="tab-btn" onclick="switchTab('projections',this)">Projections</button>
+      <button class="tab-btn" onclick="switchTab('sensitivity',this)">Sensitivity</button>
+      <button class="tab-btn" onclick="switchTab('bridge',this)">Value bridge</button>
+      <button class="tab-btn" onclick="switchTab('context',this)">Market context</button>
+      <button class="tab-btn" onclick="switchTab('multiples',this)">Multiples</button>
+      <button class="tab-btn" onclick="switchTab('sotp',this)">SOTP / PEG</button>
+    </div>
+    <div class="tab-content">
+
+      <!-- SUMMARY -->
+      <div class="rpanel active" id="rp-summary">
+        <div class="metric-grid" id="metric-cards"></div>
+        <div class="card">
+          <div class="card-title">Historical quarterly FCF &amp; 40-quarter projection ($B)</div>
+          <div class="chart-wrap" style="height:230px">
+            <canvas id="c-fcf" role="img" aria-label="FCF bar chart">FCF projections.</canvas>
+          </div>
+          <div class="legend">
+            <span><span class="dot" style="background:#9ca3af"></span>Historical actuals (Q1 FY24 – Q4 FY26)</span>
+            <span><span class="dot" style="background:#1d4ed8"></span>Projected quarterly (FY27 Q1 – FY36 Q4)</span>
+          </div>
+        </div>
+        <div class="note-box" id="result-note"></div>
+        <div class="card" id="val-summary-card" style="margin-top:14px;display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin:0">Valuation Summary — All Methods</div>
+            <span style="font-size:10px;color:var(--t3)">vs market $<span id="vs-mkt-label"></span></span>
+          </div>
+          <div class="tbl-wrap"><table class="data-tbl" id="val-summary-table" style="width:100%"></table></div>
+          <div id="val-football" style="margin-top:16px"></div>
+        </div>
+      </div>
+
+      <!-- SEGMENTS -->
+      <div class="rpanel" id="rp-company">
+
+        <!-- Identity card -->
+        <div class="card" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:0 0 auto">
+            <div style="width:64px;height:64px;background:#76b900;border-radius:12px;
+              display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#fff">N</div>
+          </div>
+          <div style="flex:1;min-width:220px">
+            <div style="font-size:20px;font-weight:700;color:var(--t1)">NVIDIA Corporation</div>
+            <div style="font-size:12px;color:var(--t2);margin-top:2px">NASDAQ: NVDA &nbsp;·&nbsp; S&P 500 &nbsp;·&nbsp; Philadelphia Semiconductor Index</div>
+            <p style="font-size:12px;color:var(--t2);margin-top:10px;line-height:1.6;max-width:680px">
+              NVIDIA designs and manufactures graphics processing units (GPUs) and system-on-chip units.
+              Originally known for PC gaming graphics cards, NVIDIA has become the dominant supplier of
+              AI accelerators used to train and run large language models, data centre workloads, and
+              autonomous vehicles. Its CUDA software ecosystem, built over two decades, creates a deep
+              competitive moat that rivals have struggled to replicate. The Blackwell GPU architecture
+              (launched FY26) drives the current hypergrowth cycle.
+            </p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:12px;flex:0 0 auto">
+            <div><span style="color:var(--t3)">Founded</span><br><b>1993</b></div>
+            <div><span style="color:var(--t3)">Headquarters</span><br><b>Santa Clara, CA</b></div>
+            <div><span style="color:var(--t3)">CEO</span><br><b>Jensen Huang</b></div>
+            <div><span style="color:var(--t3)">Employees</span><br><b>~36,000</b></div>
+            <div><span style="color:var(--t3)">Fiscal Year End</span><br><b>Jan 31</b></div>
+            <div><span style="color:var(--t3)">Shares Out.</span><br><b>~24.4B</b></div>
+          </div>
+        </div>
+
+        <!-- Key metrics row -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:4px">
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Market Cap</div>
+            <div id="co-mktcap" style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">$5.1T</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">FY26 Revenue</div>
+            <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">$130.5B</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">FY26 Net Income</div>
+            <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">$72.9B</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">FY26 EPS (Adj.)</div>
+            <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">$2.99</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Gross Margin</div>
+            <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">74.6%</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">P/E (Fwd FY27E)</div>
+            <div id="co-pe" style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">—</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">52-Wk Range</div>
+            <div id="co-range" style="font-size:15px;font-weight:700;margin-top:4px;color:var(--t1)">—</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px 10px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Beta (5Y Monthly)</div>
+            <div style="font-size:18px;font-weight:700;margin-top:4px;color:var(--t1)">1.72</div>
+          </div>
+        </div>
+
+        <!-- Historical price chart -->
+        <div class="card" style="margin-top:4px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div class="card-title" style="margin:0">NVDA Historical Price</div>
+            <div style="display:flex;gap:4px" id="price-range-btns">
+              <button class="pr-btn" onclick="setPriceRange(365)">1Y</button>
+              <button class="pr-btn" onclick="setPriceRange(730)">2Y</button>
+              <button class="pr-btn active" onclick="setPriceRange(1825)">5Y</button>
+            </div>
+          </div>
+          <div id="price-chart-status" style="font-size:12px;color:var(--t2);margin-bottom:6px"></div>
+          <div class="chart-wrap" style="height:320px"><canvas id="c-hist-price"></canvas></div>
+          <div style="display:flex;gap:20px;margin-top:8px;font-size:11px;color:var(--t3);flex-wrap:wrap">
+            <span>Monthly close · Split-adjusted · ★ Jun 2025–May 2026 estimated</span>
+            <span id="co-price-date"></span>
+          </div>
+        </div>
+
+        <!-- Business segments + products -->
+        <div class="two-col" style="margin-top:4px">
+          <div class="card">
+            <div class="card-title">Business Segments (FY26A Revenue)</div>
+            <table class="data-tbl" style="width:100%">
+              <thead><tr><th>Segment</th><th class="num">Revenue ($B)</th><th class="num">Share</th><th>Key Products</th></tr></thead>
+              <tbody>
+                <tr><td><b style="color:#3b82f6">Data Centre</b></td><td class="num">$115.2</td><td class="num">88.3%</td><td style="font-size:11px;color:var(--t2)">H100/H200, Blackwell B100/B200, NVLink, DGX</td></tr>
+                <tr><td><b style="color:#22c55e">Gaming</b></td><td class="num">$11.4</td><td class="num">8.7%</td><td style="font-size:11px;color:var(--t2)">GeForce RTX 50 series, DLSS 4</td></tr>
+                <tr><td><b style="color:#f59e0b">Professional Vis.</b></td><td class="num">$2.2</td><td class="num">1.7%</td><td style="font-size:11px;color:var(--t2)">RTX 6000 Ada, Omniverse</td></tr>
+                <tr><td><b style="color:#a78bfa">Automotive</b></td><td class="num">$1.7</td><td class="num">1.3%</td><td style="font-size:11px;color:var(--t2)">DRIVE Thor, DRIVE OS, Orin</td></tr>
+                <tr style="font-weight:700"><td>Total</td><td class="num">$130.5B</td><td class="num">100%</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title">Key Competitive Advantages</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:12px">
+              <div><b style="color:var(--blue2)">CUDA Ecosystem</b><br><span style="color:var(--t2)">18M+ developers, 3,500+ GPU-accelerated applications. Decade-long head start vs. AMD ROCm and Intel oneAPI.</span></div>
+              <div><b style="color:var(--green)">NVLink / NVSwitch</b><br><span style="color:var(--t2)">GPU-to-GPU interconnect enabling 576-GPU Blackwell clusters. Up to 1.8TB/s bandwidth — no rival offers comparable scale.</span></div>
+              <div><b style="color:var(--amber)">Full-Stack AI Platform</b><br><span style="color:var(--t2)">Hardware + CUDA + cuDNN + TensorRT + Triton + NIM microservices. Customers buy a platform, not a chip.</span></div>
+              <div><b style="color:#a78bfa">Supply Chain Control</b><br><span style="color:var(--t2)">Deep TSMC 4N/3N allocation, CoWoS-L HBM packaging partnerships, and long-term supply agreements through FY27+.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk factors -->
+        <div class="card" style="margin-top:4px">
+          <div class="card-title">Key Risk Factors</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:12px">
+            <div style="background:var(--red-lt);border-radius:var(--r);padding:10px;border:1px solid rgba(185,28,28,.15)">
+              <b style="color:var(--red)">Export Controls</b><br><span style="color:var(--t2)">US BIS restrictions on H100/H200/B200 to China. ~17% of FY26 revenue at risk. A800/H800 workarounds also restricted.</span>
+            </div>
+            <div style="background:var(--red-lt);border-radius:var(--r);padding:10px;border:1px solid rgba(185,28,28,.15)">
+              <b style="color:var(--red)">Customer Concentration</b><br><span style="color:var(--t2)">Microsoft, Google, Amazon, Meta represent >40% of Data Centre revenue. Any capex pullback materially impacts results.</span>
+            </div>
+            <div style="background:var(--amber-lt);border-radius:var(--r);padding:10px;border:1px solid rgba(146,64,14,.15)">
+              <b style="color:var(--amber)">Competition</b><br><span style="color:var(--t2)">AMD MI300X gaining traction. Custom silicon (TPU v5, Trainium2, Maia 100) from hyperscalers. Qualcomm/Intel targeting edge AI.</span>
+            </div>
+            <div style="background:var(--amber-lt);border-radius:var(--r);padding:10px;border:1px solid rgba(146,64,14,.15)">
+              <b style="color:var(--amber)">Supply Constraints</b><br><span style="color:var(--t2)">CoWoS advanced packaging bottleneck at TSMC. HBM3e supply limited by SK Hynix/Samsung/Micron capacity. Demand exceeds supply through FY27.</span>
+            </div>
+            <div style="background:var(--green-lt);border-radius:var(--r);padding:10px;border:1px solid rgba(21,128,61,.15)">
+              <b style="color:var(--green)">Valuation Risk</b><br><span style="color:var(--t2)">Trading at >30× EV/Sales and ~50× forward earnings. Priced for perfection — any miss or guidance cut risks sharp de-rating.</span>
+            </div>
+            <div style="background:var(--green-lt);border-radius:var(--r);padding:10px;border:1px solid rgba(21,128,61,.15)">
+              <b style="color:var(--green)">AI Spend Cycle</b><br><span style="color:var(--t2)">Hyperscaler AI capex could plateau or rotate to inference chips (lower ASP). Revenue heavily dependent on continued training-cluster build-out.</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end rp-company -->
+
+      <!-- SOTP / PEG -->
+      <div class="rpanel" id="rp-financials">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+            <div>
+              <div class="card-title" style="margin-bottom:2px">Historical Financial Statements</div>
+              <div style="font-size:11px;color:var(--t3)">NVIDIA Corporation · Fiscal year ends Jan 31 · USD billions · FY26E estimated from quarterly actuals</div>
+            </div>
+            <div style="display:flex;gap:4px" id="fin-toggle-bar">
+              <button class="fin-btn active" onclick="showFinTab('income',this)">Income Statement</button>
+              <button class="fin-btn" onclick="showFinTab('balance',this)">Balance Sheet</button>
+              <button class="fin-btn" onclick="showFinTab('cashflow',this)">Cash Flow</button>
+            </div>
+          </div>
+
+          <!-- INCOME STATEMENT -->
+          <div id="fin-income">
+            <div class="waterfall-scroll">
+            <table class="waterfall-tbl" style="min-width:620px">
+              <thead>
+                <tr>
+                  <th style="width:200px;text-align:left">($B unless noted)</th>
+                  <th class="num">FY22</th><th class="num">FY23</th><th class="num">FY24</th><th class="num">FY25</th><th class="num" style="color:var(--blue2)">FY26E</th>
+                </tr>
+              </thead>
+              <tbody id="is-body"></tbody>
+            </table>
+            </div>
+            <p style="font-size:10px;color:var(--t3);margin-top:8px">* EPS diluted, adjusted for 10:1 stock split (Jun 2024) and 4:1 split (Jul 2021). FY23 operating income includes $1.35B Arm deal termination charge.</p>
+          </div>
+
+          <!-- BALANCE SHEET -->
+          <div id="fin-balance" style="display:none">
+            <div class="waterfall-scroll">
+            <table class="waterfall-tbl" style="min-width:620px">
+              <thead>
+                <tr>
+                  <th style="width:200px;text-align:left">($B)</th>
+                  <th class="num">FY22</th><th class="num">FY23</th><th class="num">FY24</th><th class="num">FY25</th><th class="num" style="color:var(--blue2)">FY26E</th>
+                </tr>
+              </thead>
+              <tbody id="bs-body"></tbody>
+            </table>
+            </div>
+            <p style="font-size:10px;color:var(--t3);margin-top:8px">Source: NVDA 10-K filings FY22–FY25. FY26E estimated. Net cash = cash & equivalents + short-term investments − total debt.</p>
+          </div>
+
+          <!-- CASH FLOW -->
+          <div id="fin-cashflow" style="display:none">
+            <div class="waterfall-scroll">
+            <table class="waterfall-tbl" style="min-width:620px">
+              <thead>
+                <tr>
+                  <th style="width:200px;text-align:left">($B)</th>
+                  <th class="num">FY22</th><th class="num">FY23</th><th class="num">FY24</th><th class="num">FY25</th><th class="num" style="color:var(--blue2)">FY26E</th>
+                </tr>
+              </thead>
+              <tbody id="cf-body"></tbody>
+            </table>
+            </div>
+            <p style="font-size:10px;color:var(--t3);margin-top:8px">FCF = Operating cash flow − CapEx. FY26E based on run-rate from quarterly actuals.</p>
+          </div>
+        </div>
+
+        <!-- KPI summary bar -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+          <div class="card" style="text-align:center;padding:12px 8px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">5Y Rev CAGR</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px">+51%</div>
+            <div style="font-size:10px;color:var(--t3)">FY22→FY26E</div>
+          </div>
+          <div class="card" style="text-align:center;padding:12px 8px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">5Y NI CAGR</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px">+68%</div>
+            <div style="font-size:10px;color:var(--t3)">FY22→FY26E</div>
+          </div>
+          <div class="card" style="text-align:center;padding:12px 8px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Peak Gross Margin</div>
+            <div style="font-size:22px;font-weight:700;color:var(--blue2);margin-top:4px">75.0%</div>
+            <div style="font-size:10px;color:var(--t3)">FY25</div>
+          </div>
+          <div class="card" style="text-align:center;padding:12px 8px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">FY26E FCF</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:4px">$114B</div>
+            <div style="font-size:10px;color:var(--t3)">vs $3.8B in FY23</div>
+          </div>
+          <div class="card" style="text-align:center;padding:12px 8px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">FY26E Net Cash</div>
+            <div style="font-size:22px;font-weight:700;color:var(--blue2);margin-top:4px">$53.5B</div>
+            <div style="font-size:10px;color:var(--t3)">After $8.5B debt</div>
+          </div>
+          <div class="card" style="text-align:center;padding:12px 8px">
+            <div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Buybacks FY22-26E</div>
+            <div style="font-size:22px;font-weight:700;color:var(--amber);margin-top:4px">$128B</div>
+            <div style="font-size:10px;color:var(--t3)">Total returned</div>
+          </div>
+        </div>
+      </div><!-- end rp-financials -->
+
+      <!-- COMPANY OVERVIEW -->
+      <div class="rpanel" id="rp-segments">
+        <div class="card">
+          <div class="card-title">Revenue by segment — FY2026 actuals + 10-year projections ($B)</div>
+          <div class="chart-wrap" style="height:240px">
+            <canvas id="c-seg-stacked" role="img" aria-label="Stacked bar chart of segment revenue">Segment revenue stacked.</canvas>
+          </div>
+          <div class="legend" id="seg-legend"></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">FY2026 → FY2036 segment mix</div>
+            <div class="chart-wrap" style="height:160px">
+              <canvas id="c-seg-donut" role="img" aria-label="Segment mix donut chart">Segment mix.</canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Sentiment adjustments applied</div>
+            <div id="sentiment-summary"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Year-by-year growth rate path · per segment</div>
+          <div class="chart-wrap" style="height:200px">
+            <canvas id="c-growth-path" role="img" aria-label="Growth rate path line chart">Growth rate path.</canvas>
+          </div>
+          <div class="legend" id="growth-legend"></div>
+          <p style="font-size:10px;color:var(--t3);margin-top:6px">Shaped by the "Growth path" selector in the sidebar. Dashed line = each segment's terminal growth rate.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Segment revenue table ($B)</div>
+          <div class="tbl-wrap"><table id="seg-table"></table></div>
+        </div>
+      </div>
+
+      <!-- PROJECTIONS -->
+      <div class="rpanel" id="rp-projections">
+
+        <!-- FCF Waterfall with Annual / Quarterly toggle -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+            <div class="card-title" style="margin:0">FCF Waterfall &nbsp;<span style="font-weight:400;font-size:10px;color:var(--t3)">← scroll →</span></div>
+            <div class="wf-toggle">
+              <button class="wf-tog-btn active" onclick="setWFMode('annual',this)">Annual (FY27–FY36)</button>
+              <button class="wf-tog-btn" onclick="setWFMode('quarterly',this)">Quarterly (52 periods)</button>
+            </div>
+          </div>
+          <div id="fcf-waterfall" style="margin-top:4px"></div>
+          <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6">
+            <b>Formula:</b> FCFF = NOPAT + D&amp;A − CapEx − ΔNWC &nbsp;|&nbsp;
+            NOPAT = EBIT × (1−Tax) &nbsp;|&nbsp; ΔNWC = ΔRev × NWC% (default 5%) &nbsp;|&nbsp;
+            CapEx concave path FY27→FY36 &nbsp;|&nbsp; TGR floor 1.5% &nbsp;|&nbsp; WACC cap 18% &nbsp;|&nbsp;
+            <span style="background:rgba(156,163,175,.15);padding:1px 5px;border-radius:3px">Grey = actual</span>
+            <span style="background:rgba(29,78,216,.08);padding:1px 5px;border-radius:3px;color:#1d4ed8;margin-left:4px">Blue = model</span>
+          </div>
+        </div>
+
+        <!-- Annual FCFF charts -->
+        <div style="font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.06em;text-transform:uppercase;padding:4px 0 2px">Annual Projection (FY27E – FY36E)</div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Unlevered FCFF vs. CapEx ($B)</div>
+            <div class="chart-wrap" style="height:200px">
+              <canvas id="c-fcfcx" role="img" aria-label="FCF vs CapEx">FCF and CapEx.</canvas>
+            </div>
+            <div class="legend">
+              <span><span class="dot" style="background:#1d4ed8"></span>FCFF</span>
+              <span><span class="dot" style="background:#bfdbfe"></span>CapEx</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Revenue by year ($B)</div>
+            <div class="chart-wrap" style="height:200px">
+              <canvas id="c-rev-annual" role="img" aria-label="Annual revenue">Annual revenue.</canvas>
+            </div>
+            <div class="legend">
+              <span><span class="dot" style="background:#1d4ed8"></span>Revenue</span>
+              <span><span class="dot" style="background:#bfdbfe"></span>EBIT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quarterly FCFF charts -->
+        <div style="font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.06em;text-transform:uppercase;padding:10px 0 2px">Quarterly View (13 Historical + 39 Projected)</div>
+        <div class="card">
+          <div class="card-title">Total revenue — historical actuals + quarterly projection ($B)</div>
+          <div class="chart-wrap" style="height:210px">
+            <canvas id="c-rev-qtrs" role="img" aria-label="Quarterly revenue chart">Quarterly revenue.</canvas>
+          </div>
+          <div class="legend">
+            <span><span class="dot" style="background:#9ca3af"></span>Actual (Q1 FY24 – Q1 FY27)</span>
+            <span><span class="dot" style="background:#1d4ed8"></span>Projected (Q2 FY27 – Q4 FY36)</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Unlevered FCFF — historical actuals + quarterly projection ($B)</div>
+          <div class="chart-wrap" style="height:210px">
+            <canvas id="c-fcf-qtrs" role="img" aria-label="Quarterly FCF chart">Quarterly FCF.</canvas>
+          </div>
+          <div class="legend">
+            <span><span class="dot" style="background:#9ca3af"></span>Historical (Q1 FY24 – Q1 FY27)</span>
+            <span><span class="dot" style="background:#60a5fa"></span>Projected (Q2 FY27 – Q4 FY36)</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SENSITIVITY -->
+      <div class="rpanel" id="rp-sensitivity">
+        <div class="card">
+          <div class="card-title">Implied share price · WACC × terminal growth rate</div>
+          <div class="tbl-wrap"><table class="sens-tbl" id="sens-1"></table></div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <span class="badge bdg-gold">★ your inputs</span>
+            <span class="badge bdg-green">≥ $210.57 (current price)</span>
+            <span class="badge bdg-red">&lt; $210.57</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Implied share price · WACC × EBIT margin (FY27)</div>
+          <div class="tbl-wrap"><table class="sens-tbl" id="sens-2"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Implied share price · Data Center FY27 growth × WACC</div>
+          <div class="tbl-wrap"><table class="sens-tbl" id="sens-3"></table></div>
+          <p style="font-size:10px;color:var(--t3);margin-top:6px">All other inputs held at current values. Data Center is ~88% of total revenue.</p>
+        </div>
+      </div>
+
+      <!-- BRIDGE -->
+      <div class="rpanel" id="rp-bridge">
+        <div id="bridge-result" style="margin-bottom:14px"></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Enterprise → equity value bridge</div>
+            <div id="bridge-rows"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">EV composition</div>
+            <div class="chart-wrap" style="height:170px">
+              <canvas id="c-donut" role="img" aria-label="EV split donut">EV composition.</canvas>
+            </div>
+            <div class="legend" style="justify-content:center;margin-top:6px">
+              <span><span class="dot" style="background:#1d4ed8"></span>PV FCFs</span>
+              <span><span class="dot" style="background:#bfdbfe"></span>PV terminal value</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bear / Base / Bull scenario comparison</div>
+          <div id="scen-rows"></div>
+        </div>
+      </div>
+
+      <!-- MARKET CONTEXT -->
+      <div class="rpanel" id="rp-context">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">What assumptions justify $210.57?</div>
+            <div id="justify-note" style="font-size:12px;color:var(--t2);line-height:1.7"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Sentiment factor impact</div>
+            <div id="gauge-rows"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Market-implied vs. model assumptions</div>
+          <div class="tbl-wrap"><table id="context-table"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Key risk factors</div>
+          <div id="risk-factors" style="font-size:12px;color:var(--t2);line-height:1.8"></div>
+        </div>
+      </div>
+
+      <!-- RELATIVE VALUATION / MULTIPLES -->
+      <div class="rpanel" id="rp-multiples">
+        <div id="mult-result" style="margin-bottom:14px"></div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">NVDA Trading Multiples</div>
+            <table class="data-tbl" id="nvda-mult-table" style="width:100%"></table>
+            <p style="font-size:10px;color:var(--t3);margin-top:8px">Trailing = FY2026A actual. Forward = FY27E from your model inputs.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Peer Comparison · NTM Multiples <span style="font-size:10px;font-weight:400;color:var(--t3)">(approx. Jun 2026)</span></div>
+            <div class="tbl-wrap"><table class="data-tbl" id="peer-mult-table" style="width:100%"></table></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Implied Share Price from Peer Median Multiples · FY27E</div>
+          <div class="tbl-wrap"><table class="data-tbl" id="implied-mult-table" style="width:100%"></table></div>
+          <div id="mult-football" style="margin-top:14px"></div>
+          <p style="font-size:10px;color:var(--t3);margin-top:8px">Peer median applied to NVDA FY27E metrics. Net cash bridge: equity = EV + net cash. Forward EPS from DCF model projections.</p>
+        </div>
+      </div>
+
+      <!-- FINANCIALS -->
+      <div class="rpanel" id="rp-sotp">
+        <div id="sotp-result" style="margin-bottom:10px"></div>
+        <div id="peg-implied" style="margin-bottom:14px"></div>
+        <div class="card">
+          <div class="card-title">Sum-of-the-Parts · EV/Revenue Multiple per Segment</div>
+          <div class="tbl-wrap"><table class="data-tbl" id="sotp-table" style="width:100%"></table></div>
+          <p style="font-size:10px;color:var(--t3);margin-top:8px">Adjust multiples in the table. SOTP = Σ(Segment Rev × EV/Rev multiple) + Net Cash, divided by shares. Use FY26A actuals or switch to FY27E below.</p>
+          <div style="margin-top:8px;display:flex;gap:12px;align-items:center">
+            <label style="font-size:11px;color:var(--t2);font-weight:500">Base year:</label>
+            <div class="radio-row" style="flex:none;gap:6px">
+              <div class="radio-opt selected" style="padding:5px 12px" data-group="sotp-yr" data-val="fy26" onclick="selectOpt(this);buildSOTP(_lastResult)">FY26A</div>
+              <div class="radio-opt" style="padding:5px 12px" data-group="sotp-yr" data-val="fy27" onclick="selectOpt(this);buildSOTP(_lastResult)">FY27E</div>
+            </div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">PEG Ratio Analysis</div>
+            <table class="data-tbl" id="peg-table" style="width:100%;margin-bottom:12px"></table>
+            <div style="background:var(--bg2);border-radius:var(--r);padding:10px;border:1px solid var(--bd)">
+              <div style="font-size:11px;color:var(--t2);font-weight:600;margin-bottom:8px">Implied Price Calculator</div>
+              <div class="row2" style="margin-bottom:8px">
+                <div class="field">
+                  <label>LT EPS growth (5yr CAGR %)</label>
+                  <input type="number" id="peg-growth" value="30" step="1" min="5" max="60" oninput="updatePEG()">
+                </div>
+                <div class="field">
+                  <label>Target PEG multiple</label>
+                  <input type="number" id="peg-target" value="1.5" step="0.1" min="0.5" max="4" oninput="updatePEG()">
+                </div>
+              </div>
+            </div>
+            <p style="font-size:10px;color:var(--t3);margin-top:8px">PEG = (P/E) ÷ EPS growth %. PEG=1 = textbook fair value. Premium-quality compounders often trade 1.5–2.5×.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">PEG Sensitivity · Implied Price</div>
+            <div class="tbl-wrap"><table class="sens-tbl" id="peg-sens-table"></table></div>
+            <p style="font-size:10px;color:var(--t3);margin-top:6px">Rows = LT EPS growth rate. Cols = target PEG. Uses trailing P/E applied to FY26A EPS $4.90.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+/* ── Constants ── */
+let CURR=210.57, MKT_CAP=5100;
+const HIST_YRS=['FY22A','FY23A','FY24A','FY25A','FY26A'];
+const PROJ_YRS=['FY27E','FY28E','FY29E','FY30E','FY31E','FY32E','FY33E','FY34E','FY35E','FY36E'];
+const FCF_HIST=[4.06,3.75,27.02,60.85,96.70];
+const REV_HIST=[26.91,26.97,60.92,130.50,215.94];
+// Quarterly historical revenue ($B) — sourced from NVIDIA earnings press releases
+// Q1FY24=Apr'23, Q2FY24=Jul'23, Q3FY24=Oct'23, Q4FY24=Jan'24
+// Q1FY25=Apr'24, Q2FY25=Jul'24, Q3FY25=Oct'24, Q4FY25=Jan'25
+// Q1FY26=Apr'25, Q2FY26=Jul'25, Q3FY26=Oct'25, Q4FY26=Jan'26
+// 13 historical quarters: Q1 FY24 → Q1 FY27 (most recent actual)
+const HIST_QTRS_FLAT=['Q1FY24','Q2FY24','Q3FY24','Q4FY24','Q1FY25','Q2FY25','Q3FY25','Q4FY25','Q1FY26','Q2FY26','Q3FY26','Q4FY26','Q1FY27'];
+const HIST_QTRS=HIST_QTRS_FLAT; // alias
+const REV_HIST_Q=[7.19,13.51,18.12,22.10,26.04,30.04,35.08,39.33,44.06,46.75,57.00,68.13,81.62];
+// FCF quarterly (unlevered: NOPAT+D&A-CapEx-ΔNWC); ★=verified from cash flow statement
+const FCF_HIST_Q=[2.28,5.90,9.27,12.35,13.14,15.95,18.55,21.02,17.73,20.32,30.68,38.29,44.07];
+
+// ── Full quarterly detail for FCF waterfall (★ actual / ~ estimated) ──
+// Sources: NVIDIA earnings press releases Q1FY24→Q1FY27 + NVIDIA 10-K FY2026
+// FY24/FY25 quarters = estimated from annual figures + seasonal patterns
+// FY26 Q1 (★) & Q4 (★) + FY27 Q1 (★) = verified from reported cash flow statements
+const HQ={
+  lbl:  ['Q1FY24','Q2FY24','Q3FY24','Q4FY24','Q1FY25','Q2FY25','Q3FY25','Q4FY25','Q1FY26','Q2FY26','Q3FY26','Q4FY26','Q1FY27'],
+  // Revenue $B — ALL ACTUAL from earnings
+  rev:  [ 7.19,  13.51,  18.12,  22.10,   26.04,  30.04,  35.08,  39.33,   44.06,  46.75,  57.00,  68.13,   81.62],
+  // Gross margin % (FY26+: actual; FY24/25: estimated from annual + H100 ramp pattern)
+  gm:   [63.0,   69.0,   74.0,   77.0,    78.4,   75.7,   74.6,   73.5,    60.5,   72.4,   73.4,   75.0,    74.9],
+  // EBIT $B (Q1FY26/Q4FY26/Q1FY27: actual; others: estimated — annual sums match 10-K)
+  // FY24 annual EBIT ~$32.97B; FY25 ~$81.45B; FY26 $130.39B
+  ebit: [ 2.13,   6.72,  10.51,  13.72,   15.78,  18.75,  22.07,  24.84,   21.64,  28.35,  36.10,  44.30,   53.54],
+  // Tax rate % effective
+  tax:  [13,     13,     13,     13,       13,     13,     13,     13,       15,     15,     15,     15,      16],
+  // D&A $B (Q1FY26: 0.611★; Q4FY26: ~0.80; Q1FY27: 0.997★; others: estimated)
+  da:   [0.21,  0.27,   0.34,   0.40,    0.44,   0.47,   0.50,   0.55,    0.61,   0.68,   0.75,   0.80,    1.00],
+  // CapEx $B (Q1FY26: 1.227★; Q4FY26: 1.288★; Q1FY27: 1.757★; others: estimated)
+  capex:[0.22,  0.26,   0.28,   0.31,    0.40,   0.42,   0.45,   0.55,    1.23,   1.50,   2.02,   1.29,    1.76],
+  // Reported FCF (OCF−CapEx) from cash flow statements — only where actual (★)
+  rfcf: [null,  null,   null,   null,    null,   null,   null,   null,    26.14,  null,   null,   34.90,   48.55],
+  // true = verified ★ from NVIDIA press release/10-K
+  act:  [false, false,  false,  false,   false,  false,  false,  false,   true,   false,  false,  true,    true],
+};
+// D&A as % of revenue: FY26 actual 1.3% ($2.84B); scales up as CapEx compounds
+const DA_PCT=[.013,.015,.018,.021,.024,.026,.027,.028,.029,.030];
+
+// FY2026 actuals from 10-K (year ended Jan 25, 2026), in $B
+const SEG_DEFS=[
+  {id:'dc',  name:'Data Center',     color:'#1d4ed8', lt:'#bfdbfe', fy26:193.74},
+  {id:'gam', name:'Gaming',          color:'#15803d', lt:'#bbf7d0', fy26:16.04},
+  {id:'pv',  name:'Prof. Viz',       color:'#b45309', lt:'#fde68a', fy26:3.19},
+  {id:'auto',name:'Automotive',      color:'#b91c1c', lt:'#fecaca', fy26:2.35},
+  {id:'oem', name:'OEM & Other',     color:'#6b7280', lt:'#e5e7eb', fy26:0.62},
+];
+
+/* ── Presets ── */
+// ── Presets recalibrated Jun 2026 ──────────────────────────────────────────
+// Sources: S&P Global / StockAnalysis (52 analysts, Jun 12 2026):
+//   FY27E rev $391.7B (+81.4%), op margin 66.0%, FCF $207.4B
+//   Analyst avg target $298.93 | range $180–$500 | 62 buy / 0 sell
+// AlphaSpread DCF (May 10 2026): WACC 11.3%, base DCF $145 (conservative)
+// Damodaran Jan 2026: US ERP 4.60%, semiconductor beta ~1.55
+// Q1 FY27 actual: $81.6B rev (+85% YoY), Q2 guided $91B; GM guided 75%
+// ──────────────────────────────────────────────────────────────────────────
+const PRESETS={
+  // ── BEAR ──────────────────────────────────────────────────────────────────
+  // Sources: Damodaran ERP 2026 stressed scenario · NVDA Q1FY27 8-K (China excluded) ·
+  //   Yahoo Finance β 2.20 + stress · NVDA FY26 10-K (margins, CapEx) · CBO nominal GDP
+  // Narrative: H20 ban extended, new chips added to Entity List → -$25B+/yr China rev.
+  //   Hyperscaler CapEx digestion in 2H26. ASICs (TPU/Trainium) take 25% training share.
+  //   WACC ~17%: β=2.3, ERP=5.0%, Rf=4.6%, Reg=1.5% (risk-off mkt sentiment adds 1.5%)
+  // CapEx: NVDA fabless — FY26A 2.8%, Q1FY27A annualised 2.1%. Bear assumes heavy infrastructure investment.
+  bear:{rf:4.6,erp:5.0,beta:2.3,kd:4.8,dw:5,tax:19,reg:1.5,
+        'dc-g1':40,'dc-gt':3,'gam-g1':20,'gam-gt':1,'pv-g1':12,'pv-gt':2,
+        'auto-g1':25,'auto-gt':4,'oem-g1':2,'oem-gt':1,
+        m1:62,m10:38,cx1:3.5,cx2:3.0,nwc:8,tgr:2.0,moat:'2',aiCycle:'decel',
+        export:'severe',concentration:'high',mktSent:'risk-off',growthShape:'0.6'},
+  // ── BASE ──────────────────────────────────────────────────────────────────
+  // Sources: Damodaran ERP Jan 1 2026 = 4.23% · Yahoo/GuruFocus β midpoint = 2.0 ·
+  //   NVDA Q1FY27: DC +92% YoY ($75B) · Q2FY27 guide $91B (+~70%) · FY26 GAAP EBIT 67.4% ·
+  //   Broadcom steady-state EBIT ~50-55% · NVDA CCC 133d → NWC intensity 12% of ΔRev ·
+  //   TSMC $56B CoWoS commitment for Rubin (TrendForce Jan 2026) · CBO nominal GDP 3.9%
+  // WACC ~13%: β=2.0, ERP=4.23%, Rf=4.4%, Reg=0.5% · DC +72% (Q1 act 92%, Q2 ~70%, H2 fade)
+  // CapEx base: FY26A actual 2.8% ($6B/$216B); Q1FY27A annualised ~2.1%. Rising toward 3% for infra expansion.
+  base:{rf:4.4,erp:4.23,beta:2.0,kd:4.5,dw:5,tax:17,reg:0.5,
+        'dc-g1':72,'dc-gt':6,'gam-g1':40,'gam-gt':3,'pv-g1':28,'pv-gt':3,
+        'auto-g1':55,'auto-gt':8,'oem-g1':8,'oem-gt':2,
+        m1:68,m10:50,cx1:3.0,cx2:2.5,nwc:12,tgr:3.0,moat:'4',aiCycle:'base',
+        export:'moderate',concentration:'medium',mktSent:'neutral',growthShape:'1.0'},
+  // ── BULL ──────────────────────────────────────────────────────────────────
+  // Sources: β=1.75 (market re-rates NVDA as infrastructure utility at lower vol) ·
+  //   Damodaran ERP 4.0% (mild compression in risk-on regime) · Hyperscaler CapEx >$1T in
+  //   2027 (CNBC/Morgan Stanley Apr 2026) · NVDA Q1FY27 DC +92% sustained into H2 (Rubin) ·
+  //   DRIVE Thor wins: BYD, Hyundai, Geely, Uber (NVDA GTC 2026) · NIM/software layer
+  //   provides high-margin recurring revenue, lifts terminal margin toward 58%
+  // WACC ~10.8%: β=1.75, ERP=4.0%, Rf=4.2%, no export penalty (partial China license)
+  // CapEx bull: software leverage keeps CapEx low; NIM/CUDA recurring revenue lowers intensity.
+  bull:{rf:4.2,erp:4.0,beta:1.75,kd:4.2,dw:5,tax:16,reg:0,
+        'dc-g1':92,'dc-gt':10,'gam-g1':55,'gam-gt':5,'pv-g1':45,'pv-gt':5,
+        'auto-g1':90,'auto-gt':12,'oem-g1':15,'oem-gt':3,
+        m1:72,m10:58,cx1:2.5,cx2:2.0,nwc:10,tgr:3.5,moat:'5',aiCycle:'accel',
+        export:'none',concentration:'low',mktSent:'risk-on',growthShape:'1.6'},
+};
+
+let _lastResult=null;
+// Cross-method valuation results — populated by each builder
+const _vm={bear:null,bull:null,sotp:null,peg:null,multAvg:null,multLo:null,multHi:null};
+let charts={fcf:null,fcfcx:null,donut:null,segStacked:null,segDonut:null,revQ:null,fcfQ:null,revAnn:null};
+let wfMode='annual'; // 'annual' | 'quarterly'
+
+/* ── Helpers ── */
+const g=id=>+document.getElementById(id).value;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const fmtB=(v,d=0)=>'$'+(d?v.toFixed(d):Math.round(v))+'B';
+const fmtPx=v=>'$'+v.toFixed(2);
+const fmtPct=(v,d=1)=>v.toFixed(d)+'%';
+
+/* ── Unified result banner ── */
+function renderValResult(id,methodLabel,impliedPx,extras=[],note=''){
+  const ud=(impliedPx/CURR-1)*100;
+  const udCls=ud>=0?'green':'red';
+  const accentCls=ud>=0?'vr-accent-up':'vr-accent-dn';
+  let h=`<div class="val-result">
+    <div class="vr ${accentCls}">
+      <div class="lbl">${methodLabel}</div>
+      <div class="val ${udCls}">${fmtPx(impliedPx)}</div>
+      <div class="sub">${ud>=0?'+':''}${ud.toFixed(1)}% vs market $${CURR}</div>
+    </div>`;
+  if(_lastResult){
+    const sp=(impliedPx/_lastResult.px-1)*100;
+    h+=`<div class="vr">
+      <div class="lbl">DCF Model</div>
+      <div class="val blue">${fmtPx(_lastResult.px)}</div>
+      <div class="sub">${sp>=0?'+':''}${sp.toFixed(1)}% spread</div>
+    </div>`;
+  }
+  h+=`<div class="vr">
+    <div class="lbl">Market Price</div>
+    <div class="val amber">$${CURR}</div>
+    <div class="sub">Live · NVDA</div>
+  </div>`;
+  extras.forEach(e=>{
+    h+=`<div class="vr">
+      <div class="lbl">${e.label}</div>
+      <div class="val ${e.cls||''}">${e.val}</div>
+      ${e.sub?`<div class="sub">${e.sub}</div>`:''}
+    </div>`;
+  });
+  h+=`</div>`;
+  if(note) h+=`<div class="note-box" style="margin-top:8px">${note}</div>`;
+  document.getElementById(id).innerHTML=h;
+}
+
+/* ── WACC builder ── */
+// TGR / WACC proximity guard — warns when spread < 2% (GGM becomes unstable)
+function checkTgrWaccSpread(){
+  const tgr=g('i-tgr');
+  // Hard-clamp input to 3.5 in case browser doesn't enforce max attr
+  if(tgr>3.5){ document.getElementById('i-tgr').value=3.5; }
+  const wacc=calcWaccFromInputs();
+  const spread=wacc-Math.min(tgr,3.5);
+  const warn=document.getElementById('tgr-warn');
+  if(warn) warn.style.display=spread<2?'block':'none';
+}
+function calcWaccFromInputs(){
+  const rf=g('i-rf'),erp=g('i-erp'),beta=g('i-beta');
+  const kd=g('i-kd'),tax=g('i-tax'),dw=g('i-dw')/100;
+  const reg=g('i-reg');
+  const mktSent=getOpt('mkt-sent');
+  const sentAdj=mktSent==='risk-off'?1.5:mktSent==='risk-on'?-1:0;
+  const ke=rf+beta*erp;
+  const kdAt=kd*(1-tax/100);
+  const raw=ke*(1-dw)+kdAt*dw+reg+sentAdj;
+  return Math.min(raw, 18.0); // WACC ceiling: NVDA $54B net cash → >18% is economically indefensible
+}
+function updateWacc(){
+  const rf=g('i-rf'),erp=g('i-erp'),beta=g('i-beta');
+  const kd=g('i-kd'),tax=g('i-tax'),dw=g('i-dw')/100;
+  const reg=g('i-reg');
+  const ke=rf+beta*erp;
+  const kdAt=kd*(1-tax/100);
+  const wacc=calcWaccFromInputs();
+  const sentAdj=getOpt('mkt-sent')==='risk-off'?1.5:getOpt('mkt-sent')==='risk-on'?-1:0;
+  const rawWacc=ke*(1-dw)+kdAt*dw+reg+sentAdj;
+  const capped=rawWacc>18.0;
+  // Main display
+  document.getElementById('wacc-val').textContent=wacc.toFixed(2)+'%'+(capped?' ⚠':'');
+  document.getElementById('wacc-breakdown').textContent=
+    `Ke ${ke.toFixed(1)}% · Kd(at) ${kdAt.toFixed(2)}%`+
+    (reg>0?` · Reg ${reg}%`:'')+
+    (sentAdj!==0?` · Sent ${sentAdj>0?'+':''}${sentAdj}%`:'')+
+    (capped?` (raw ${rawWacc.toFixed(2)}%, capped 18%)` : '');
+  // Pills
+  const wpKe=document.getElementById('wp-ke');
+  const wpKd=document.getElementById('wp-kd');
+  const wpReg=document.getElementById('wp-reg');
+  if(wpKe) wpKe.textContent=ke.toFixed(1)+'%';
+  if(wpKd) wpKd.textContent=kdAt.toFixed(2)+'%';
+  if(wpReg) wpReg.textContent=(reg+sentAdj).toFixed(2)+'%';
+  checkTgrWaccSpread(); // re-evaluate TGR warning whenever WACC changes
+}
+
+/* ── Sentiment getters ── */
+function getOpt(group){
+  const el=document.querySelector(`.star-opt[data-group="${group}"].selected`)||
+            document.querySelector(`.radio-opt[data-group="${group}"].selected`);
+  return el?el.dataset.val:'3';
+}
+function selectOpt(el){
+  const group=el.dataset.group;
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+  updateWacc();
+}
+function toggleTvMethod(){
+  const method=getOpt('tv-method');
+  document.getElementById('tv-ggm').classList.toggle('visible',method==='ggm');
+  document.getElementById('tv-mult').classList.toggle('visible',method==='mult');
+}
+
+/* ── Sentiment adjustments ── */
+function getSentimentAdjustments(){
+  const moat=+getOpt('moat');
+  const moatMarginAdj=(moat-3)*2; // -4 to +4 pp
+  const aiCycle=getOpt('ai-cycle');
+  const dcGMult=aiCycle==='accel'?1.25:aiCycle==='decel'?0.70:1.0;
+  const expRisk=document.getElementById('i-export').value;
+  const dcTermAdj=expRisk==='severe'?-4:expRisk==='moderate'?-1.5:0;
+  const conc=document.getElementById('i-concentration').value;
+  const dcNearAdj=conc==='high'?-0.5:0;
+  const mktSent=getOpt('mkt-sent');
+  const sentWaccAdj=mktSent==='risk-off'?1.5:mktSent==='risk-on'?-1:0;
+  return{moatMarginAdj,dcGMult,dcTermAdj,dcNearAdj,sentWaccAdj,moat,aiCycle,expRisk,conc,mktSent};
+}
+
+/* ── Segment revenue ── */
+// alpha > 1: concave (growth stays elevated early, fades later)
+// alpha = 1: linear | alpha < 1: convex (falls fast early)
+function growthProgress(i,alpha){return i===0?0:Math.pow(i/9,alpha);}
+
+function getSegRevs(adj){
+  const alpha=parseFloat(getOpt('growth-shape'))||1.8;
+  const segRevs=SEG_DEFS.map(seg=>{
+    let g1=g(`i-${seg.id}-g1`)/100;
+    let gT=g(`i-${seg.id}-gt`)/100;
+    if(seg.id==='dc'){
+      g1*=adj.dcGMult;
+      gT+=adj.dcTermAdj/100;
+      g1+=adj.dcNearAdj/100;
+    }
+    const revs=[],growthRates=[];let prev=seg.fy26;
+    // Spike-year isolation: year 1 uses g1 (e.g. FY27 +82% DC surge).
+    // From year 2 on, anchor to a realistic post-spike rate so the model
+    // doesn't compound at 70%+ for years 2-5.  Only applies when g1 > 45%.
+    const g1post=g1>0.45?Math.min(g1*0.32,0.28):g1;
+    for(let i=0;i<10;i++){
+      const gr=i===0?g1:lerp(g1post,gT,growthProgress(i,alpha));
+      growthRates.push(gr*100);
+      const rev=prev*(1+gr);
+      revs.push(rev);prev=rev;
+    }
+    return{...seg,revs,growthRates,g1:g1*100,gT:gT*100};
+  });
+  const totalRevs=Array.from({length:10},(_,i)=>segRevs.reduce((s,sr)=>s+sr.revs[i],0));
+  return{segRevs,totalRevs};
+}
+
+/* ── Core DCF ── */
+// Patch notes:
+//   [1] NWC: ΔNWC = ΔRev × nwc% deducted from FCFF (default 5%, semiconductor peers 4–7%)
+//   [2] TGR floor: effective TGR ≥ 1.5% in GGM to prevent terminal-value collapse
+//   [3] WACC ceiling: enforced in calcWaccFromInputs() at 18.0%
+//   [4] CapEx concave path: stays elevated in FY27–29, smoothly decays to FY36 steady-state
+function calcDCF(wacc,totalRevs,tax,m1,m10EffAdj,cx1,cx2,tgrOrMult,tvMethod,cash,shares,nwc=5){
+  const fcfs=[],pvs=[],ebit=[],da=[],capex=[],nwcArr=[];
+  let prev=215.94; // FY26 actual total revenue $215,938M
+  for(let i=0;i<10;i++){
+    const rev=totalRevs[i];
+    const marg=lerp(m1/100,m10EffAdj/100,i/9);
+    // [4] Concave CapEx path: power=1.6 keeps rate elevated in first 3 years,
+    //     then decays smoothly to steady-state by FY36.
+    const cxProgress=Math.pow(i/9,1.6);
+    const cx=lerp(cx1/100,cx2/100,cxProgress);
+    const daV=rev*DA_PCT[i];
+    const cxV=rev*cx;
+    // [1] NWC: positive ΔRev → cash absorbed by working capital (drag on FCF)
+    const dnwc=(rev-prev)*(nwc/100);
+    const fcfV=rev*marg*(1-tax/100)+daV-cxV-dnwc;
+    const pv=fcfV/Math.pow(1+wacc/100,i+1);
+    fcfs.push(fcfV);pvs.push(pv);
+    ebit.push(rev*marg);da.push(daV);capex.push(cxV);nwcArr.push(dnwc);
+    prev=rev;
+  }
+  let tv,pvtv;
+  if(tvMethod==='ggm'){
+    // [2] TGR floor: minimum 1.5% — prevents Bear Case death-spiral
+    const tgrEff=Math.min(Math.max(tgrOrMult,1.5),3.5); // floor 1.5%, hard cap 3.5% (nominal GDP ceiling)
+    if(wacc/100<=tgrEff/100)return null;
+    tv=fcfs[9]*(1+tgrEff/100)/((wacc/100)-(tgrEff/100));
+  } else {
+    tv=fcfs[9]*tgrOrMult;
+  }
+  pvtv=tv/Math.pow(1+wacc/100,10);
+  const spv=pvs.reduce((a,b)=>a+b,0);
+  const ev=spv+pvtv;
+  const eq=ev+cash;
+  const px=eq/shares;
+  const margins=Array.from({length:10},(_,i)=>lerp(m1/100,m10EffAdj/100,i/9));
+  return{fcfs,pvs,ebit,da,capex,nwcArr,spv,pvtv,ev,eq,px,tv,margins,wacc,totalRevs,nwc};
+}
+
+/* ── Main run ── */
+function runCalc(){
+  const adj=getSentimentAdjustments();
+  const wacc=calcWaccFromInputs();
+  const tax=g('i-tax'),m1=g('i-m1');
+  const m10Raw=g('i-m10');
+  const m10Eff=m10Raw+adj.moatMarginAdj; // sentiment-adjusted
+  const cx1=g('i-cx1'),cx2=g('i-cx2');
+  const cash=g('i-cash'),shares=g('i-shares');
+  const tvMethod=getOpt('tv-method');
+  const tgrOrMult=tvMethod==='ggm'?g('i-tgr'):g('i-exit-mult');
+
+  const nwc=g('i-nwc');
+  const{segRevs,totalRevs}=getSegRevs(adj);
+  const r=calcDCF(wacc,totalRevs,tax,m1,m10Eff,cx1,cx2,tgrOrMult,tvMethod,cash,shares,nwc);
+  if(!r){alert('WACC must be greater than terminal growth rate.');return;}
+  r.segRevs=segRevs;r.adj=adj;r.tvMethod=tvMethod;r.tgrOrMult=tgrOrMult;
+  r.m10Eff=m10Eff;r.m1=m1;r.tax=tax;r.cx1=cx1;r.cx2=cx2;r.cash=cash;r.shares=shares;r.nwc=nwc;
+  _lastResult=r;
+
+  document.getElementById('placeholder').style.display='none';
+  document.getElementById('results').style.display='block';
+
+  buildSummary(r);
+  buildSegments(r);
+  buildProjections(r);
+  buildSensitivity(r,adj);
+  buildBridge(r);
+  buildContext(r,adj);
+  buildMultiples(r);
+  buildSOTP(r);
+  buildValTable(r);
+}
+
+/* ── SUMMARY ── */
+function buildSummary(r){
+  const ud=(r.px/CURR-1)*100;
+  const tvPct=(r.pvtv/r.ev*100).toFixed(0);
+  const tvLabel=r.tvMethod==='ggm'?`TGR ${g('i-tgr')}%`:`Exit ${g('i-exit-mult')}×`;
+  document.getElementById('metric-cards').innerHTML=`
+    <div class="mc accent">
+      <div class="lbl">Implied share price</div>
+      <div class="val ${ud>=0?'green':'red'}">${fmtPx(r.px)}</div>
+      <div class="sub ${ud>=0?'up':'down'}">${ud>=0?'+':''}${ud.toFixed(1)}% vs $${CURR}</div>
+    </div>
+    <div class="mc">
+      <div class="lbl">Enterprise value</div>
+      <div class="val">$${(r.ev/1000).toFixed(2)}T</div>
+      <div class="sub">${fmtB(r.ev)}</div>
+    </div>
+    <div class="mc">
+      <div class="lbl">PV of FCFs (40 qtrs)</div>
+      <div class="val">${fmtB(r.spv)}</div>
+      <div class="sub">${(r.spv/r.ev*100).toFixed(0)}% of EV · WACC ${r.wacc.toFixed(1)}%</div>
+    </div>
+    <div class="mc">
+      <div class="lbl">PV of terminal value</div>
+      <div class="val">${fmtB(r.pvtv)}</div>
+      <div class="sub">${tvPct}% of EV · ${tvLabel}</div>
+    </div>`;
+
+  buildFcfChart(r);
+  const ud2=(r.px/CURR-1)*100;
+  const dir=ud2<0?'discount':'premium';
+  const adjNotes=[];
+  if(r.adj.moatMarginAdj!==0) adjNotes.push(`moat ${r.adj.moatMarginAdj>0?'+':''}${r.adj.moatMarginAdj}pp terminal margin`);
+  if(r.adj.dcGMult!==1) adjNotes.push(`AI cycle ×${r.adj.dcGMult.toFixed(2)} on DC growth`);
+  if(r.adj.dcTermAdj!==0) adjNotes.push(`export risk ${r.adj.dcTermAdj}pp on DC terminal growth`);
+  if(r.adj.sentWaccAdj!==0) adjNotes.push(`market sentiment ${r.adj.sentWaccAdj>0?'+':''}${r.adj.sentWaccAdj}pp WACC`);
+  document.getElementById('result-note').innerHTML=
+    `At WACC <strong>${r.wacc.toFixed(2)}%</strong>, the model implies <strong>${fmtPx(r.px)}</strong> — a
+    <strong>${Math.abs(ud2).toFixed(1)}% ${dir}</strong> to market price $${CURR}.
+    Terminal value = <strong>${(r.pvtv/r.ev*100).toFixed(0)}%</strong> of EV.
+    ${adjNotes.length?'Sentiment adjustments applied: '+adjNotes.join('; ')+'.':''}`;
+}
+
+/* ── Valuation Summary Table ── */
+function buildValTable(r){
+  const card=document.getElementById('val-summary-card');
+  if(!r){card.style.display='none';return;}
+  card.style.display='';
+  document.getElementById('vs-mkt-label').textContent=CURR;
+
+  const ANALYST=298;
+  const rows=[
+    {group:'DCF',  method:'DCF — Base case',      px:r.px,         note:'Your WACC & inputs',           ref:true},
+    {group:'DCF',  method:'DCF — Bear case',       px:_vm.bear,     note:'China ban · WACC +2.5pp · margin −8pp'},
+    {group:'DCF',  method:'DCF — Bull case',       px:_vm.bull,     note:'Blackwell supercycle · WACC −1.5pp'},
+    {group:'SOTP', method:'Sum-of-the-Parts',      px:_vm.sotp,     note:'Σ Segment EV / Rev multiples'},
+    {group:'PEG',  method:'PEG ratio',             px:_vm.peg,      note:'Trailing P/E ÷ 30% LT growth'},
+    {group:'Mult', method:'Peer multiples avg',    px:_vm.multAvg,  note:'Avg of P/E, EV/Rev, EV/EBITDA, EV/EBIT, EV/FCF'},
+    {group:'Ref',  method:'Analyst consensus',     px:ANALYST,      note:'38 analysts · avg $298 · Strong Buy', ref:true},
+    {group:'Ref',  method:'Market price',          px:CURR,         note:'Live · NASDAQ: NVDA',           mkt:true},
+  ];
+
+  let h=`<thead><tr>
+    <th style="text-align:left;width:28%">Method</th>
+    <th class="num">Implied Price</th>
+    <th class="num">vs Market</th>
+    <th class="num">vs DCF Base</th>
+    <th style="text-align:left;color:var(--t3);font-size:10px;font-weight:400">Note</th>
+  </tr></thead><tbody>`;
+
+  let lastGroup='';
+  rows.forEach(row=>{
+    if(!row.px && row.px!==0){
+      h+=`<tr style="opacity:.45"><td>${row.method}</td><td class="num" colspan="3" style="color:var(--t3)">Run calc to populate</td><td style="font-size:11px;color:var(--t3)">${row.note}</td></tr>`;
+      return;
+    }
+    const vsM=(row.px/CURR-1)*100;
+    const vsD=(row.px/r.px-1)*100;
+    const mCls=vsM>=0?'color:var(--green)':'color:var(--red)';
+    const dCls=vsD>=0?'color:var(--green)':'color:var(--red)';
+    const boldStyle=row.ref||row.mkt?'font-weight:700':'';
+    const rowBg=row.ref&&!row.mkt?'background:var(--blue-lt)'
+               :row.mkt?'background:var(--amber-lt)':'';
+    if(row.group!==lastGroup && lastGroup!==''){
+      h+=`<tr><td colspan="5" style="padding:2px;background:var(--bg3)"></td></tr>`;
+    }
+    lastGroup=row.group;
+    h+=`<tr style="${rowBg}">
+      <td style="${boldStyle}">${row.method}</td>
+      <td class="num" style="${boldStyle}">${fmtPx(row.px)}</td>
+      <td class="num" style="${row.mkt?'':mCls}">${row.mkt?'—':(vsM>=0?'+':'')+vsM.toFixed(1)+'%'}</td>
+      <td class="num" style="${row.ref&&!row.mkt?'':dCls}">${row.ref&&!row.mkt?'ref':(vsD>=0?'+':'')+vsD.toFixed(1)+'%'}</td>
+      <td style="font-size:11px;color:var(--t3)">${row.note}</td>
+    </tr>`;
+  });
+  h+=`</tbody>`;
+  document.getElementById('val-summary-table').innerHTML=h;
+
+  // Football field
+  const allPxs=rows.map(r=>r.px).filter(v=>v!=null);
+  const lo=Math.min(...allPxs)*0.80, hi=Math.max(...allPxs)*1.08;
+  const toX=v=>Math.min(Math.max((v-lo)/(hi-lo)*100,0),100).toFixed(1)+'%';
+  const markers=[
+    {label:'Bear',   v:_vm.bear,   color:'#fca5a5'},
+    {label:'DCF',    v:r.px,       color:'#3b82f6'},
+    {label:'Bull',   v:_vm.bull,   color:'#86efac'},
+    {label:'SOTP',   v:_vm.sotp,   color:'#a78bfa'},
+    {label:'PEG',    v:_vm.peg,    color:'#67e8f9'},
+    {label:'Peers',  v:_vm.multAvg,color:'#fb923c'},
+    {label:'Target', v:ANALYST,    color:'#facc15'},
+    {label:'Market', v:CURR,       color:'#f87171'},
+  ].filter(m=>m.v!=null);
+
+  // Range bar
+  const validModel=markers.filter(m=>!['Market','Target'].includes(m.label)).map(m=>m.v);
+  const rlo=Math.min(...validModel), rhi=Math.max(...validModel);
+  let ff=`<div style="font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Football Field — Model Range vs Market</div>`;
+  ff+=`<div style="position:relative;height:28px;background:var(--bg3);border-radius:4px;overflow:visible;margin:0 2px">`;
+  // Shaded model range
+  ff+=`<div style="position:absolute;top:0;bottom:0;left:${toX(rlo)};width:${((rhi-rlo)/(hi-lo)*100).toFixed(1)}%;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);border-radius:3px"></div>`;
+  markers.forEach(m=>{
+    ff+=`<div title="${m.label}: ${fmtPx(m.v)}" style="position:absolute;top:3px;bottom:3px;left:${toX(m.v)};width:3px;background:${m.color};border-radius:2px;cursor:default"></div>`;
+  });
+  ff+=`</div>`;
+  ff+=`<div class="legend" style="margin-top:8px;flex-wrap:wrap">`;
+  markers.forEach(m=>ff+=`<span><span class="dot" style="background:${m.color}"></span>${m.label} ${fmtPx(m.v)}</span>`);
+  ff+=`</div>`;
+  document.getElementById('val-football').innerHTML=ff;
+}
+
+/* ── Quarterly helpers ── */
+// Convert array of annual values → 40 quarters via binary search for per-quarter compound rate
+// Ensures quarterly sum matches each annual total exactly
+function annualToQuarterly(annualArr, baseQ4){
+  const qtrs=[]; const qLabels=[];
+  let prevQ4=baseQ4;
+  annualArr.forEach((ann,y)=>{
+    // binary search quarterly growth gq such that sum of 4 compounding quarters = ann
+    let lo=-0.4,hi=5.0;
+    for(let iter=0;iter<90;iter++){
+      const gq=(lo+hi)/2;
+      const sum=[1,2,3,4].reduce((s,k)=>s+prevQ4*Math.pow(1+gq,k),0);
+      if(sum<ann) lo=gq; else hi=gq;
+    }
+    const gq=(lo+hi)/2;
+    const yq=[1,2,3,4].map(k=>prevQ4*Math.pow(1+gq,k));
+    qtrs.push(...yq);
+    prevQ4=yq[3];
+    const fy=27+y;
+    ['Q1','Q2','Q3','Q4'].forEach(q=>qLabels.push(`${q}\nFY${fy}`));
+  });
+  return{qtrs,qLabels};
+}
+function annualToQuarterlyFlat(annualArr,baseQ4){
+  const {qtrs,qLabels}=annualToQuarterly(annualArr,baseQ4);
+  return{qtrs,qLabels:qLabels.map(l=>l.replace('\n',''))};
+}
+
+function buildFcfChart(r){
+  const ctx=document.getElementById('c-fcf').getContext('2d');
+  if(charts.fcf) charts.fcf.destroy();
+  // Historical: 12 actual quarters; Projected: 40 derived quarters from annual DCF
+  const {qtrs:fcfQtrs,qLabels:projQLabels}=annualToQuarterly(r.fcfs,FCF_HIST_Q[11]);
+  const allLabels=[...HIST_QTRS_FLAT,...projQLabels.map(l=>l.replace('\n',''))];
+  const allData=[...FCF_HIST_Q,...fcfQtrs];
+  const colors=[...Array(12).fill('rgba(156,163,175,0.85)'),...Array(40).fill('rgba(29,78,216,0.85)')];
+  charts.fcf=new Chart(ctx,{type:'bar',
+    data:{labels:allLabels,datasets:[{data:allData,backgroundColor:colors,borderRadius:2,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:c=>{const lbl=allLabels[c.dataIndex];return`${lbl}: $${c.raw.toFixed(1)}B`;}}}},
+      scales:{
+        x:{ticks:{font:{size:8.5},maxRotation:55,autoSkip:true,maxTicksLimit:26},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+v+'B'},grid:{color:'rgba(0,0,0,.06)'}}
+      }
+    }
+  });
+}
+
+/* ── SEGMENTS ── */
+function buildRevQtrsChart(r){
+  const ctx=document.getElementById('c-rev-qtrs').getContext('2d');
+  if(charts.revQ) charts.revQ.destroy();
+  const {qtrs:revQtrs,qLabels:projQLabels}=annualToQuarterlyFlat(r.totalRevs,REV_HIST_Q[11]);
+  const allLabels=[...HIST_QTRS_FLAT,...projQLabels];
+  const histData=[...REV_HIST_Q,...Array(40).fill(null)];
+  const projData=[...Array(12).fill(null),...revQtrs];
+  // Add a connecting point at Q4FY26 → Q1FY27 transition
+  charts.revQ=new Chart(ctx,{type:'bar',
+    data:{labels:allLabels,datasets:[
+      {label:'Historical',data:histData,backgroundColor:'rgba(156,163,175,0.85)',borderRadius:2,borderSkipped:false},
+      {label:'Projected', data:projData,backgroundColor:'rgba(29,78,216,0.85)',borderRadius:2,borderSkipped:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:c=>allLabels[c.dataIndex]+': $'+c.raw.toFixed(1)+'B'}}},
+      scales:{
+        x:{ticks:{font:{size:8.5},maxRotation:55,autoSkip:true,maxTicksLimit:26},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+v+'B'},grid:{color:'rgba(0,0,0,.06)'}}
+      }
+    }
+  });
+}
+
+function buildSegments(r){
+  buildRevQtrsChart(r);
+  // Stacked bar: FY26 actuals + projections
+  const allLabels=['FY26A',...PROJ_YRS];
+  const datasets=r.segRevs.map(seg=>({
+    label:seg.name,
+    data:[seg.fy26,...seg.revs],
+    backgroundColor:seg.color,
+    stack:'s',
+  }));
+  const ctx=document.getElementById('c-seg-stacked').getContext('2d');
+  if(charts.segStacked) charts.segStacked.destroy();
+  charts.segStacked=new Chart(ctx,{type:'bar',
+    data:{labels:allLabels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+c.raw.toFixed(0)+'B'}}},
+      scales:{x:{stacked:true,ticks:{font:{size:10},maxRotation:45,autoSkip:false},grid:{display:false}},
+              y:{stacked:true,ticks:{font:{size:10},callback:v=>'$'+v+'B'},grid:{color:'rgba(0,0,0,.06)'}}}}});
+
+  document.getElementById('seg-legend').innerHTML=r.segRevs.map(s=>
+    `<span><span class="dot" style="background:${s.color}"></span>${s.name}</span>`).join('');
+
+  // Donut: FY36 segment mix
+  const fy36vals=r.segRevs.map(s=>s.revs[9]);
+  const ctx2=document.getElementById('c-seg-donut').getContext('2d');
+  if(charts.segDonut) charts.segDonut.destroy();
+  charts.segDonut=new Chart(ctx2,{type:'doughnut',
+    data:{labels:r.segRevs.map(s=>s.name),
+      datasets:[{data:fy36vals,backgroundColor:r.segRevs.map(s=>s.color),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': $'+Math.round(c.raw)+'B ('+Math.round(c.raw/fy36vals.reduce((a,b)=>a+b)*100)+'%)'}}}}});
+
+  // Segment table
+  const cols=['FY27E','FY29E','FY31E','FY33E','FY36E'];
+  const idxs=[0,2,4,6,9];
+  let th='<tr><th>Segment</th><th>FY26A</th>'+cols.map(c=>`<th>${c}</th>`).join('')+'<th>CAGR</th></tr>';
+  r.segRevs.forEach(seg=>{
+    const cagr=((seg.revs[9]/seg.fy26)**(1/10)-1)*100;
+    th+=`<tr><td style="font-weight:600;color:${seg.color}">${seg.name}</td>
+      <td>$${seg.fy26.toFixed(0)}B</td>`+
+      idxs.map(i=>`<td>$${seg.revs[i].toFixed(0)}B</td>`).join('')+
+      `<td>${cagr.toFixed(1)}%</td></tr>`;
+  });
+  const totCagr=((r.totalRevs[9]/215.94)**(1/10)-1)*100;
+  th+=`<tr class="r-bold"><td>Total</td><td>$216B<br><span style="font-size:9px;color:var(--t3)">FY26A</span></td>`+
+    idxs.map(i=>`<td>$${Math.round(r.totalRevs[i])}B</td>`).join('')+
+    `<td>${totCagr.toFixed(1)}%</td></tr>`;
+  document.getElementById('seg-table').innerHTML=th;
+
+  // Sentiment summary
+  const adj=r.adj;
+  const items=[
+    ['Competitive moat',['Eroding','Weak','Average','Strong','Dominant'][+adj.moat-1],
+      adj.moatMarginAdj===0?'var(--t2)':adj.moatMarginAdj>0?'var(--green)':'var(--red)',
+      adj.moatMarginAdj===0?'No margin adjustment':`Terminal EBIT margin ${adj.moatMarginAdj>0?'+':''}${adj.moatMarginAdj}pp`],
+    ['AI CapEx cycle',{'accel':'Acceleration','base':'Base','decel':'Deceleration'}[adj.aiCycle],
+      adj.dcGMult===1?'var(--t2)':adj.dcGMult>1?'var(--green)':'var(--red)',
+      `DC growth ×${adj.dcGMult.toFixed(2)}`],
+    ['Export control',adj.expRisk==='none'?'None':adj.expRisk==='moderate'?'Moderate':'Severe',
+      adj.expRisk==='none'?'var(--t2)':adj.expRisk==='severe'?'var(--red)':'var(--amber)',
+      adj.dcTermAdj===0?'No impact':`DC terminal growth ${adj.dcTermAdj}pp`],
+    ['Market sentiment',{'risk-off':'Risk-off','neutral':'Neutral','risk-on':'Risk-on'}[adj.mktSent],
+      adj.sentWaccAdj===0?'var(--t2)':adj.sentWaccAdj>0?'var(--red)':'var(--green)',
+      adj.sentWaccAdj===0?'No WACC adjustment':`WACC ${adj.sentWaccAdj>0?'+':''}${adj.sentWaccAdj}pp`],
+  ];
+  document.getElementById('sentiment-summary').innerHTML=items.map(([k,v,c,note])=>
+    `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--bd)">
+      <div><div style="font-size:11px;color:var(--t2)">${k}</div><div style="font-size:10px;color:var(--t3)">${note}</div></div>
+      <div style="font-size:12px;font-weight:600;color:${c};text-align:right">${v}</div>
+    </div>`).join('');
+
+  buildGrowthPath(r);
+}
+
+/* ── GROWTH PATH CHART ── */
+let chartGrowthPath=null;
+function buildGrowthPath(r){
+  const ctx=document.getElementById('c-growth-path').getContext('2d');
+  if(chartGrowthPath) chartGrowthPath.destroy();
+  const alpha=parseFloat(getOpt('growth-shape'))||1.8;
+  const shapeLabel={'0.6':'Convex','1.0':'Linear','1.8':'Concave','2.8':'S-curve'}[String(alpha)]||'Custom';
+
+  // Expand annual growth rates to quarterly QoQ rates using geometric interpolation
+  function annualToQtrGrowth(seg){
+    const qRates=[];
+    seg.growthRates.forEach((annGr,yi)=>{
+      // quarterly compound rate that produces same annual growth
+      const qGr=(Math.pow(1+annGr/100,0.25)-1)*100;
+      [0,1,2,3].forEach(()=>qRates.push(qGr));
+    });
+    return qRates;
+  }
+
+  const qLabels=[];
+  for(let y=0;y<10;y++){const fy=27+y;['Q1','Q2','Q3','Q4'].forEach(q=>qLabels.push(`${q} FY${fy}`));}
+
+  const datasets=r.segRevs.map(seg=>({
+    label:seg.name,
+    data:annualToQtrGrowth(seg),
+    borderColor:seg.color,
+    backgroundColor:'transparent',
+    borderWidth:1.8,
+    pointRadius:0,
+    tension:0.5,
+  }));
+
+  chartGrowthPath=new Chart(ctx,{
+    type:'line',
+    data:{labels:qLabels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw.toFixed(2)}% QoQ`}}},
+      scales:{
+        x:{ticks:{font:{size:8.5},maxRotation:55,autoSkip:true,maxTicksLimit:20},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>v.toFixed(1)+'%'},
+           grid:{color:'rgba(0,0,0,.06)'},
+           title:{display:true,text:`QoQ growth % · Shape: ${shapeLabel} (α=${alpha})`,font:{size:10},color:'var(--t2)'}}
+      }}
+  });
+
+  document.getElementById('growth-legend').innerHTML=r.segRevs.map(s=>
+    `<span><span class="dot" style="background:${s.color}"></span>${s.name} → ${s.gT.toFixed(2)}% QoQ term</span>`).join('');
+}
+
+/* ══════════════════════════════════════════
+   MEMORY — save / load / delete scenarios
+══════════════════════════════════════════ */
+const MEM_KEY='nvda_dcf_memories';
+const MEM_INPUTS=['rf','erp','beta','kd','dw','tax','reg',
+  'dc-g1','dc-gt','gam-g1','gam-gt','pv-g1','pv-gt','auto-g1','auto-gt','oem-g1','oem-gt',
+  'm1','m10','cx1','cx2','tgr','exit-mult','cash','shares'];
+const MEM_SELS=['tv-method','growth-shape','moat','ai-cycle','export','concentration','mkt-sent'];
+
+function memGet(){return JSON.parse(localStorage.getItem(MEM_KEY)||'[]');}
+function memSet(arr){localStorage.setItem(MEM_KEY,JSON.stringify(arr));}
+
+function readAllSettings(){
+  const s={};
+  MEM_INPUTS.forEach(k=>{const el=document.getElementById('i-'+k);if(el)s[k]=el.value;});
+  MEM_SELS.forEach(k=>{const el=document.getElementById('i-'+k);if(el)s[k]=el.value;});
+  return s;
+}
+function applySettings(s){
+  MEM_INPUTS.forEach(k=>{if(s[k]!=null){const el=document.getElementById('i-'+k);if(el)el.value=s[k];}});
+  MEM_SELS.forEach(k=>{if(s[k]!=null){const el=document.getElementById('i-'+k);if(el)el.value=s[k];}});
+  updateWacc();
+}
+
+function saveMemory(){
+  const nameEl=document.getElementById('mem-name-input');
+  const name=(nameEl.value.trim()||'Scenario '+(memGet().length+1));
+  const px=document.getElementById('o-px')?.textContent||'—';
+  const wacc=document.getElementById('o-wacc')?.textContent||'—';
+  const arr=memGet();
+  arr.unshift({name,date:new Date().toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),
+    settings:readAllSettings(),px,wacc});
+  if(arr.length>10)arr.pop();
+  memSet(arr);
+  nameEl.value='';
+  renderMemList();
+}
+function deleteMemory(i){
+  const arr=memGet();arr.splice(i,1);memSet(arr);renderMemList();
+}
+function loadMemory(i){
+  const arr=memGet();
+  if(arr[i]){applySettings(arr[i].settings);toggleMemPanel();}
+}
+function renderMemList(){
+  const arr=memGet();
+  const el=document.getElementById('mem-list');
+  if(!arr.length){el.innerHTML='<div class="mem-empty">No saved scenarios yet.<br>Adjust inputs and click Save.</div>';return;}
+  el.innerHTML=arr.map((m,i)=>`
+    <div class="mem-entry" onclick="loadMemory(${i})">
+      <div class="mem-entry-info">
+        <div class="mem-entry-name">${m.name}</div>
+        <div class="mem-entry-meta">${m.date} · WACC ${m.wacc}</div>
+      </div>
+      <div class="mem-entry-val">${m.px}</div>
+      <button class="mem-del" onclick="event.stopPropagation();deleteMemory(${i})" title="Delete">✕</button>
+    </div>`).join('');
+}
+function toggleMemPanel(){
+  const p=document.getElementById('mem-panel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) renderMemList();
+}
+// Close memory panel when clicking outside
+document.addEventListener('click',e=>{
+  const w=document.getElementById('mem-wrap');
+  if(w&&!w.contains(e.target)) document.getElementById('mem-panel').classList.remove('open');
+});
+
+/* ── Waterfall mode toggle ── */
+function setWFMode(mode,btn){
+  wfMode=mode;
+  document.querySelectorAll('.wf-tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(_lastResult) buildFCFWaterfall(_lastResult);
+}
+
+/* ── FCF WATERFALL ── */
+function buildFCFWaterfall(r){
+  const n=HQ.lbl.length; // 13 historical quarters
+
+  // ── Shared historical values ──
+  const hRev=HQ.rev;
+  const hGP=HQ.rev.map((rv,i)=>rv*HQ.gm[i]/100);
+  const hGM=HQ.gm;
+  const hEBIT=HQ.ebit;
+  const hEM=HQ.ebit.map((e,i)=>e/HQ.rev[i]*100);
+  const hNOP=HQ.ebit.map((e,i)=>e*(1-HQ.tax[i]/100));
+  const hDA=HQ.da;
+  const hCX=HQ.capex;
+  const hDNWC=HQ.rev.map((rv,i)=>i>0?(rv-HQ.rev[i-1])*0.01:null);
+  const hFCF=hNOP.map((np,i)=>np+hDA[i]-hCX[i]-(hDNWC[i]||0));
+  const hFCFM=hFCF.map((f,i)=>f/hRev[i]*100);
+  const hYoY=hRev.map((rv,i)=>i>=4?(rv/hRev[i-4]-1)*100:null);
+
+  // ── Formatters ──
+  const fB=v=>v===null?'—':'$'+v.toFixed(1);
+  const fBig=v=>v===null?'—':'$'+Math.round(v);
+  const fPct=v=>v===null?'—':v.toFixed(1)+'%';
+  const fYoY=v=>v===null?'—':(v>=0?'+':'')+v.toFixed(0)+'%';
+  const fDA=v=>v===null?'—':'+$'+v.toFixed(2);
+  const fCX=v=>v===null?'—':'('+v.toFixed(2)+')';
+  const fNWC=v=>v===null?'—':'('+Math.abs(v).toFixed(2)+')';
+  const fDF=v=>v===null?'—':v.toFixed(3);
+  const sep='<td class="wf-sep-col"></td>';
+
+  const mkRow=(label,hVals,pVals,fmtFn,rowCls='')=>{
+    const hc=hVals.map(v=>`<td class="wf-hd">${fmtFn(v)}</td>`).join('');
+    const pc=pVals.map(v=>`<td class="wf-pd">${fmtFn(v)}</td>`).join('');
+    return `<tr class="${rowCls}"><td class="wf-label">${label}</td>${hc}${sep}${pc}</tr>`;
+  };
+
+  if(wfMode==='annual'){
+    // ── ANNUAL mode: 13 hist quarters | 10 projected years ──
+    const pRev=r.totalRevs;
+    const pEBIT=r.ebit;
+    const pEM=r.margins.map(m=>m*100);
+    const pNOP=r.ebit.map(e=>e*(1-r.tax/100));
+    const pDA=r.da;
+    const pCX=r.capex;
+    const pDNWC=r.nwcArr; // [1] uses model's NWC intensity from calcDCF
+    const pFCF=r.fcfs;
+    const pFCFM=pFCF.map((f,i)=>f/pRev[i]*100);
+    const pYoY=pRev.map((rv,i)=>((i===0?rv/215.94:rv/pRev[i-1])-1)*100);
+    const pDF=Array.from({length:10},(_,i)=>1/Math.pow(1+r.wacc/100,i+1));
+    const nil=Array(n).fill(null);
+    const nilP=Array(10).fill(null);
+    const mkSec=l=>`<tr class="wf-section"><td class="wf-label" colspan="${n+12}">${l}</td></tr>`;
+    const hH=HQ.lbl.map(l=>`<th class="wf-hh">${l}</th>`).join('');
+    const pH=PROJ_YRS.map(y=>`<th class="wf-ph">${y}</th>`).join('');
+    let t=`<div class="waterfall-scroll"><table class="waterfall-tbl">`;
+    t+=`<thead><tr><th>Line Item</th>${hH}${sep}${pH}</tr></thead><tbody>`;
+    t+=mkSec('Revenue & Profitability');
+    t+=mkRow('Revenue ($B)',hRev,pRev,fBig,'wf-revenue');
+    t+=mkRow('YoY Growth %',hYoY,pYoY,fYoY,'');
+    t+=mkRow('Gross Profit ($B)',hGP,nilP,fB,'');
+    t+=mkRow('Gross Margin %',hGM,nilP,fPct,'wf-dim');
+    t+=mkRow('EBIT ($B)',hEBIT,pEBIT,fBig,'wf-bold');
+    t+=mkRow('EBIT Margin %',hEM,pEM,fPct,'wf-dim');
+    t+=mkSec('FCFF Bridge (Unlevered Free Cash Flow to Firm)');
+    t+=mkRow('NOPAT = EBIT × (1−Tax)',hNOP,pNOP,fBig,'');
+    t+=mkRow('(+) D&amp;A ($B)',hDA,pDA,fDA,'');
+    t+=mkRow('(−) CapEx ($B)',hCX,pCX,fCX,'wf-red');
+    t+=mkRow('(−) ΔNWC ($B) ¹',hDNWC,pDNWC,fNWC,'wf-dim');
+    t+=mkRow('= Unlevered FCFF ($B)',hFCF,pFCF,fBig,'wf-fcf');
+    t+=mkRow('FCFF Margin %',hFCFM,pFCFM,fPct,'wf-dim');
+    t+=mkRow('Reported OCF−CapEx (memo)',HQ.rfcf,nilP,v=>v===null?'—':'$'+v.toFixed(2),'wf-dim');
+    t+=mkSec('DCF Valuation (Projected Years Only)');
+    t+=mkRow('Discount Factor',nil,pDF,fDF,'wf-dim');
+    t+=mkRow('PV of FCFF ($B)',nil,r.pvs,fBig,'wf-blue');
+    t+=`</tbody></table></div>`;
+    t+=`<div style="font-size:10px;color:var(--t3);margin-top:6px;padding:0 4px">¹ Historical ΔNWC estimated at 1% of ΔRev (NVDA actual NWC intensity); projected ΔNWC uses model input (${r.nwc}% of ΔRev). Historical FCF rows reflect modelled FCFF (NOPAT+D&A−CapEx−ΔNWC); see "Reported OCF−CapEx" memo row for cash flow statement actuals.</div>`;
+    document.getElementById('fcf-waterfall').innerHTML=t;
+
+  } else {
+    // ── QUARTERLY mode: 13 hist quarters | 39 projected quarters ──
+    const {qtrs:qRev,qLabels:qRevLbl}=annualToQuarterlyFlat(r.totalRevs,REV_HIST_Q[11]);
+    const {qtrs:qDA}=annualToQuarterlyFlat(r.da,HQ.da[11]);
+    const {qtrs:qCX}=annualToQuarterlyFlat(r.capex,HQ.capex[11]);
+    // Slice to remove Q1FY27 (index 0) — already shown in historical
+    const pRev=qRev.slice(1);   // 39 quarters: Q2FY27…Q4FY36
+    const pDA=qDA.slice(1);
+    const pCX=qCX.slice(1);
+    const pLabels=qRevLbl.slice(1); // Q2FY27…Q4FY36
+    // EBIT margin per quarter: use annual margin for the year that quarter belongs to
+    // j=0..38; yearIdx = floor((j+1)/4)
+    const pEBITQ=pRev.map((rv,j)=>rv*r.margins[Math.min(Math.floor((j+1)/4),9)]);
+    const pNOPQ=pEBITQ.map(e=>e*(1-r.tax/100));
+    // ΔNWC: first projected quarter vs Q1FY27 actual
+    const pDNWCQ=pRev.map((rv,j)=>{
+      const prev=j===0?HQ.rev[12]:pRev[j-1];
+      return (rv-prev)*0.01;
+    });
+    const pFCFQ=pNOPQ.map((np,j)=>np+pDA[j]-pCX[j]-pDNWCQ[j]);
+    const pFCFMQ=pFCFQ.map((f,j)=>f/pRev[j]*100);
+    const pEM=pEBITQ.map((e,j)=>e/pRev[j]*100);
+    const pYoYQ=pRev.map((rv,j)=>{
+      // QoQ % change vs same period prior year (4 quarters back)
+      const prevYr=j>=3?pRev[j-3-1]:(j>=0&&hRev[n-4+j+1]!=null?hRev[n-4+j+1]:null);
+      // Simpler: just show QoQ
+      const prev=j===0?HQ.rev[12]:pRev[j-1];
+      return (rv/prev-1)*100;
+    });
+    const nP=pRev.length; // 39
+    const nilH=Array(n).fill(null);
+    const nilP=Array(nP).fill(null);
+    const mkSec=l=>`<tr class="wf-section"><td class="wf-label" colspan="${n+nP+2}">${l}</td></tr>`;
+    const hH=HQ.lbl.map(l=>`<th class="wf-hh">${l}</th>`).join('');
+    const pH=pLabels.map(l=>`<th class="wf-ph" style="font-size:9px">${l}</th>`).join('');
+    let t=`<div class="waterfall-scroll"><table class="waterfall-tbl">`;
+    t+=`<thead><tr><th>Line Item</th>${hH}${sep}${pH}</tr></thead><tbody>`;
+    t+=mkSec('Revenue & Profitability (Quarterly)');
+    t+=mkRow('Revenue ($B)',hRev,pRev,fB,'wf-revenue');
+    t+=mkRow('QoQ Growth %',hYoY.map(()=>null),pYoYQ,fYoY,'');
+    t+=mkRow('EBIT ($B)',hEBIT,pEBITQ,fB,'wf-bold');
+    t+=mkRow('EBIT Margin %',hEM,pEM,fPct,'wf-dim');
+    t+=mkSec('FCFF Bridge (Quarterly)');
+    t+=mkRow('NOPAT ($B)',hNOP,pNOPQ,fB,'');
+    t+=mkRow('(+) D&amp;A ($B)',hDA,pDA,fDA,'');
+    t+=mkRow('(−) CapEx ($B)',hCX,pCX,fCX,'wf-red');
+    t+=mkRow('(−) ΔNWC ($B)',hDNWC,pDNWCQ,fNWC,'wf-dim');
+    t+=mkRow('= Unlevered FCFF ($B)',hFCF,pFCFQ,fB,'wf-fcf');
+    t+=mkRow('FCFF Margin %',hFCFM,pFCFMQ,fPct,'wf-dim');
+    t+=mkRow('Reported OCF−CapEx (memo)',HQ.rfcf,nilP,v=>v===null?'—':'$'+v.toFixed(2),'wf-dim');
+    t+=`</tbody></table></div>`;
+    document.getElementById('fcf-waterfall').innerHTML=t;
+  }
+}
+
+/* ── PROJECTIONS ── */
+function buildProjections(r){
+  buildFCFWaterfall(r);
+
+  // FCF vs CapEx (annual)
+  const ctx=document.getElementById('c-fcfcx').getContext('2d');
+  if(charts.fcfcx) charts.fcfcx.destroy();
+  charts.fcfcx=new Chart(ctx,{type:'bar',
+    data:{labels:PROJ_YRS,datasets:[
+      {label:'FCF',data:r.fcfs,backgroundColor:'#1d4ed8',borderRadius:2},
+      {label:'CapEx',data:r.capex,backgroundColor:'#bfdbfe',borderRadius:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+c.raw.toFixed(1)+'B'}}},
+      scales:{x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}},
+              y:{ticks:{font:{size:10},callback:v=>'$'+v+'B'},grid:{color:'rgba(0,0,0,.06)'}}}}});
+
+  // Annual Revenue vs EBIT chart
+  const ctxRA=document.getElementById('c-rev-annual').getContext('2d');
+  if(charts.revAnn) charts.revAnn.destroy();
+  charts.revAnn=new Chart(ctxRA,{type:'bar',
+    data:{labels:PROJ_YRS,datasets:[
+      {label:'Revenue',data:r.totalRevs,backgroundColor:'rgba(96,165,250,0.85)',borderRadius:2,order:2},
+      {label:'EBIT',data:r.ebit,backgroundColor:'rgba(34,197,94,0.85)',borderRadius:2,order:2},
+      {label:'EBIT Margin',data:r.margins.map(m=>m*100),type:'line',borderColor:'#f97316',
+       backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#f97316',
+       yAxisID:'pct',tension:0.3,order:1},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='pct'?
+          c.dataset.label+': '+c.raw.toFixed(1)+'%':
+          c.dataset.label+': $'+c.raw.toFixed(1)+'B'}}},
+      scales:{
+        x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+v+'B'},grid:{color:'rgba(0,0,0,.06)'},position:'left'},
+        pct:{ticks:{font:{size:10},callback:v=>v+'%'},grid:{display:false},position:'right'}
+      }}});
+
+  // Quarterly FCF ramp chart — Q1FY27 shown as historical actual; projected from Q2FY27
+  const {qtrs:fcfQtrs,qLabels:fcfQLabels}=annualToQuarterlyFlat(r.fcfs,FCF_HIST_Q[11]);
+  const fcfAllLabels=[...HIST_QTRS_FLAT,...fcfQLabels.slice(1)]; // 13 hist + 39 proj = 52
+  const fcfHistData=[...FCF_HIST_Q,...Array(39).fill(null)];     // 13 + 39 = 52
+  const fcfProjData=[...Array(13).fill(null),...fcfQtrs.slice(1)]; // 13 + 39 = 52
+  const ctx2=document.getElementById('c-fcf-qtrs').getContext('2d');
+  if(charts.fcfQ) charts.fcfQ.destroy();
+  charts.fcfQ=new Chart(ctx2,{type:'bar',
+    data:{labels:fcfAllLabels,datasets:[
+      {label:'Historical',data:fcfHistData,backgroundColor:'rgba(156,163,175,0.85)',borderRadius:2,borderSkipped:false},
+      {label:'Projected', data:fcfProjData,backgroundColor:'rgba(96,165,250,0.85)',borderRadius:2,borderSkipped:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:c=>fcfAllLabels[c.dataIndex]+': $'+c.raw.toFixed(1)+'B'}}},
+      scales:{
+        x:{ticks:{font:{size:8.5},maxRotation:55,autoSkip:true,maxTicksLimit:26},grid:{display:false}},
+        y:{ticks:{font:{size:10},callback:v=>'$'+v+'B'},grid:{color:'rgba(0,0,0,.06)'}}
+      }
+    }
+  });
+}
+
+/* ── SENSITIVITY ── */
+function sensCalc(wacc,tgr,dcG1Scale,m1,m10adj,totalRevs,r){
+  // Quick scalar for sensitivity (scale DC growth)
+  const adj2={...r.adj,dcGMult:r.adj.dcGMult*dcG1Scale};
+  const{totalRevs:revs}=getSegRevsSentAdj(adj2);
+  const m10Eff=m10adj+r.adj.moatMarginAdj;
+  const res=calcDCF(wacc,revs,r.tax,m1,m10Eff,r.cx1,r.cx2,
+    r.tvMethod==='ggm'?tgr:r.tgrOrMult,r.tvMethod,r.cash,r.shares,r.nwc);
+  return res?res.px:0;
+}
+function getSegRevsSentAdj(adj){
+  const alpha=parseFloat(getOpt('growth-shape'))||1.8;
+  const segRevs=SEG_DEFS.map(seg=>{
+    let g1=g(`i-${seg.id}-g1`)/100;
+    let gT=g(`i-${seg.id}-gt`)/100;
+    if(seg.id==='dc'){g1*=adj.dcGMult;gT+=adj.dcTermAdj/100;g1+=adj.dcNearAdj/100;}
+    const revs=[],growthRates=[];let prev=seg.fy26;
+    const g1post=g1>0.45?Math.min(g1*0.32,0.28):g1; // spike-year isolation
+    for(let i=0;i<10;i++){
+      const gr=i===0?g1:lerp(g1post,gT,growthProgress(i,alpha));
+      growthRates.push(gr*100);
+      const rev=prev*(1+gr);revs.push(rev);prev=rev;
+    }
+    return{...seg,revs,growthRates,g1:g1*100,gT:gT*100};
+  });
+  const totalRevs=Array.from({length:10},(_,i)=>segRevs.reduce((s,sr)=>s+sr.revs[i],0));
+  return{segRevs,totalRevs};
+}
+function qCalcPx(wacc,tgr,totalRevs,m1,m10Eff,r){
+  const res=calcDCF(wacc,totalRevs,r.tax,m1,m10Eff,r.cx1,r.cx2,
+    r.tvMethod==='ggm'?tgr:r.tgrOrMult,r.tvMethod,r.cash,r.shares,r.nwc);
+  return res?res.px:0;
+}
+
+function buildSensitivity(r,adj){
+  const WACCS=[8,10,12,14,r.wacc,17,19,21].map(w=>+w.toFixed(2));
+  const TGRS=[2,2.5,3,3.5,4,4.5,5];
+  const MARGS=[44,48,52,56,60,64,68];
+  const DCGS=[40,60,80,90,100,120,140];
+
+  function scell(px,isBase){
+    let bg,col,lbl='';
+    if(isBase){bg='#fef3c7';col='#92400e';lbl='★ ';}
+    else if(px>=CURR){const i=Math.min((px/CURR-1)*2,1);const gv=Math.round(200+55*i),rv=Math.round(240-80*i);bg=`rgb(${rv},${gv},${rv})`;col='#15803d';}
+    else{const i=Math.min((1-px/CURR)*2,1);const rv=Math.round(215+40*i),gv=Math.round(215-100*i);bg=`rgb(${rv},${gv},${gv})`;col='#b91c1c';}
+    return`<span class="scell" style="background:${bg};color:${col}">${lbl}$${Math.round(px)}</span>`;
+  }
+
+  // Table 1: WACC × TGR
+  let h='<tr><th>WACC ↓ / TGR →</th>'+TGRS.map(t=>`<th>${t}%</th>`).join('')+'</tr>';
+  WACCS.forEach(w=>{
+    const isBaseRow=Math.abs(w-r.wacc)<.05;
+    h+=`<tr><td style="font-weight:${isBaseRow?700:400};color:${isBaseRow?'var(--blue2)':'var(--t2)'}">${w.toFixed(1)}%</td>`;
+    TGRS.forEach(t=>{
+      if(w/100<=t/100){h+='<td><span class="scell" style="color:var(--t3)">n/m</span></td>';return;}
+      const tgrOrMult=r.tvMethod==='ggm'?t:r.tgrOrMult;
+      const px=qCalcPx(w,tgrOrMult,r.totalRevs,r.m1,r.m10Eff,r);
+      const base=isBaseRow&&Math.abs(t-(r.tvMethod==='ggm'?r.tgrOrMult:3.5))<.1;
+      h+=`<td>${scell(px,base)}</td>`;
+    });
+    h+='</tr>';
+  });
+  document.getElementById('sens-1').innerHTML=h;
+
+  // Table 2: WACC × EBIT margin
+  let h2='<tr><th>WACC ↓ / Margin →</th>'+MARGS.map(m=>`<th>${m}%</th>`).join('')+'</tr>';
+  WACCS.forEach(w=>{
+    const isBaseRow=Math.abs(w-r.wacc)<.05;
+    h2+=`<tr><td style="font-weight:${isBaseRow?700:400};color:${isBaseRow?'var(--blue2)':'var(--t2)'}">${w.toFixed(1)}%</td>`;
+    MARGS.forEach(m=>{
+      const px=qCalcPx(w,r.tvMethod==='ggm'?r.tgrOrMult:3.5,r.totalRevs,m,m-5,r);
+      const base=isBaseRow&&Math.abs(m-r.m1)<.5;
+      h2+=`<td>${scell(px,base)}</td>`;
+    });
+    h2+='</tr>';
+  });
+  document.getElementById('sens-2').innerHTML=h2;
+
+  // Table 3: DC FY27 growth × WACC
+  let h3='<tr><th>DC FY27 g% ↓ / WACC →</th>'+WACCS.map(w=>`<th>${w.toFixed(1)}%</th>`).join('')+'</tr>';
+  DCGS.forEach(dcg=>{
+    const isBaseDc=Math.abs(dcg-g('i-dc-g1'))<5;
+    h3+=`<tr><td style="font-weight:${isBaseDc?700:400};color:${isBaseDc?'var(--blue2)':'var(--t2)'}">${dcg}%</td>`;
+    // Rebuild segment revs with this DC growth
+    WACCS.forEach(w=>{
+      const origDcG1=g('i-dc-g1');
+      document.getElementById('i-dc-g1').value=dcg;
+      const{totalRevs:revs}=getSegRevs(adj);
+      document.getElementById('i-dc-g1').value=origDcG1;
+      const px=qCalcPx(w,r.tvMethod==='ggm'?r.tgrOrMult:3.5,revs,r.m1,r.m10Eff,r);
+      const base=isBaseDc&&Math.abs(w-r.wacc)<.05;
+      h3+=`<td>${scell(px,base)}</td>`;
+    });
+    h3+='</tr>';
+  });
+  document.getElementById('sens-3').innerHTML=h3;
+}
+
+/* ── BRIDGE ── */
+function buildBridge(r){
+  const tvLabel=r.tvMethod==='ggm'?`Gordon growth (TGR ${r.tgrOrMult}%)`:`Exit multiple (${r.tgrOrMult}×)`;
+  document.getElementById('bridge-rows').innerHTML=[
+    ['PV of FCFs (FY2027E–FY2036E)',fmtB(r.spv),false],
+    [`(+) PV of terminal value (${tvLabel})`,fmtB(r.pvtv),false],
+    ['= Enterprise value',fmtB(r.ev),true],
+    ['(+) Net cash / (−) debt','$'+r.cash.toFixed(1)+'B',false],
+    ['= Implied equity value',fmtB(r.eq),true],
+    ['÷ Shares outstanding',r.shares.toFixed(2)+'B',false],
+    ['= Implied share price',fmtPx(r.px),true],
+    ['Current market price','$'+CURR,false],
+    ['Premium / (discount) to DCF',((CURR/r.px-1)*100).toFixed(1)+'%',true],
+  ].map(([l,v,b])=>
+    `<div class="br-row${b?' total':''}"><span class="br-lbl${b?' s':''}">${l}</span><span class="br-val">${v}</span></div>`
+  ).join('');
+
+  // Donut
+  const ctx=document.getElementById('c-donut').getContext('2d');
+  if(charts.donut) charts.donut.destroy();
+  charts.donut=new Chart(ctx,{type:'doughnut',
+    data:{labels:['PV of FCFs','PV of terminal value'],
+      datasets:[{data:[r.spv,r.pvtv],backgroundColor:['#1d4ed8','#bfdbfe'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': $'+Math.round(c.raw)+'B ('+Math.round(c.raw/r.ev*100)+'%)'}}}}});
+
+  // Scenarios
+  const run=(wAdd,mAdd,dcScale,mktS)=>{
+    const adj2={...r.adj,dcGMult:r.adj.dcGMult*dcScale};
+    const{totalRevs:revs}=getSegRevsSentAdj(adj2);
+    const w=r.wacc+wAdd+mktS;
+    const res=calcDCF(w,revs,r.tax,r.m1+mAdd,r.m10Eff+mAdd,r.cx1,r.cx2,
+      r.tvMethod==='ggm'?Math.max(r.tgrOrMult+(mAdd>0?.5:mAdd<0?-.5:0),1.5):r.tgrOrMult,
+      r.tvMethod,r.cash,r.shares,r.nwc);
+    return res?res.px:0;
+  };
+  const bear=run(2.5,-8,.55,1.0),base=r.px,bull=run(-1.5,2,1.22,-0.5);
+  _vm.bear=bear; _vm.bull=bull;
+  renderValResult('bridge-result','DCF Base Case',base,[
+    {label:'Bear Case', val:'$'+Math.round(bear), cls:bear>=CURR?'green':'red', sub:'China ban + AI pause'},
+    {label:'Bull Case', val:'$'+Math.round(bull), cls:'green', sub:'Blackwell supercycle'},
+  ]);
+  const maxPx=Math.max(bull,CURR)*1.05;
+  const scens=[
+    {n:'Bear case',px:bear,desc:'China ban + AI slowdown: WACC +2.5pp, margin −8pp, DC rev ×0.55',fill:'#fca5a5',col:'#b91c1c'},
+    {n:'Base case (your inputs)',px:base,desc:'Wall St consensus: FY27E rev $392B, op margin 66%, WACC ~11.5%',fill:'#93c5fd',col:'#1d4ed8'},
+    {n:'Bull case',px:bull,desc:'Blackwell+Rubin supercycle: WACC −1.5pp, margin +2pp, DC rev ×1.22',fill:'#86efac',col:'#15803d'},
+    {n:'Current market price',px:CURR,desc:'NASDAQ: NVDA · '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),fill:'#fde68a',col:'#92400e'},
+  ];
+  document.getElementById('scen-rows').innerHTML=scens.map(s=>
+    `<div class="scen-row">
+      <span class="scen-name">${s.n}<br><span style="font-size:10px;color:var(--t3)">${s.desc}</span></span>
+      <div class="scen-track"><div class="scen-fill" style="width:${Math.min(s.px/maxPx*100,100).toFixed(1)}%;background:${s.fill}"></div></div>
+      <span class="scen-px" style="color:${s.col}">$${Math.round(s.px)}</span>
+    </div>`).join('');
+}
+
+/* ── MARKET CONTEXT ── */
+function buildContext(r,adj){
+  // Binary search for justifying WACC
+  let lo=4,hi=28,wNeeded=(lo+hi)/2;
+  for(let iter=0;iter<60;iter++){
+    const mid=(lo+hi)/2;
+    const px=qCalcPx(mid,r.tvMethod==='ggm'?r.tgrOrMult:3.5,r.totalRevs,r.m1,r.m10Eff,r);
+    if(Math.abs(px-CURR)<0.5){wNeeded=mid;break;}
+    if(px>CURR) lo=mid; else hi=mid;
+    wNeeded=mid;
+  }
+  const impliedBeta=((wNeeded-g('i-rf'))/g('i-erp')).toFixed(2);
+  document.getElementById('justify-note').innerHTML=
+    `Under your revenue and margin assumptions, <strong>$${CURR}</strong> is justified by a WACC of
+    approximately <strong>${wNeeded.toFixed(1)}%</strong>
+    (TGR ${r.tvMethod==='ggm'?r.tgrOrMult+'%':r.tgrOrMult+'× exit'}).
+    Your base-case WACC is <strong>${r.wacc.toFixed(1)}%</strong>,
+    implying the market prices NVDA with a required return ~${Math.max(0,r.wacc-wNeeded).toFixed(1)}pp
+    lower than your estimate — or expects structurally higher FCF than modeled.
+    <br><br>
+    At WACC ${wNeeded.toFixed(1)}%, the implied beta (at Rf ${g('i-rf')}%, ERP ${g('i-erp')}%)
+    would be <strong>${impliedBeta}×</strong>.
+    The market is effectively treating NVDA as a
+    <strong>${+impliedBeta<1.3?'low-volatility compounder':+impliedBeta<1.8?'moderately risky growth stock':'high-beta AI play'}</strong>.`;
+
+  // Gauge rows
+  const gauges=[
+    {l:'Moat → terminal margin',adj:adj.moatMarginAdj,max:4,unit:'pp',pos:adj.moatMarginAdj>0,
+     note:['Eroding','Weak','Avg','Strong','Dom'][+adj.moat-1]},
+    {l:'AI cycle → DC growth',adj:(adj.dcGMult-1)*100,max:25,unit:'%',pos:adj.dcGMult>1,
+     note:adj.aiCycle},
+    {l:'Export risk → DC term.',adj:adj.dcTermAdj,max:4,unit:'pp',pos:adj.dcTermAdj>=0,
+     note:adj.expRisk},
+    {l:'Sentiment → WACC',adj:-adj.sentWaccAdj,max:1.5,unit:'pp',pos:-adj.sentWaccAdj>0,
+     note:adj.mktSent},
+  ];
+  document.getElementById('gauge-rows').innerHTML=gauges.map(g=>{
+    const pct=Math.min(Math.abs(g.adj)/g.max*100,100).toFixed(0);
+    const fill=g.adj===0?'var(--t3)':g.pos?'#15803d':'#b91c1c';
+    const label=g.adj===0?'—':(g.adj>0?'+':'')+g.adj.toFixed(1)+g.unit;
+    return`<div class="gauge-row">
+      <div class="gauge-label">${g.l}<br><span style="font-size:10px;color:var(--t3)">${g.note}</span></div>
+      <div class="gauge-track"><div class="gauge-fill" style="width:${pct}%;background:${fill}"></div></div>
+      <div class="gauge-val" style="color:${fill}">${label}</div>
+    </div>`;
+  }).join('');
+
+  // Market implied vs model table
+  const impliedFCF=CURR*r.shares/(r.tvMethod==='ggm'?r.tgrOrMult:30);
+  const tblRows=[
+    ['Market-implied WACC',wNeeded.toFixed(1)+'%',r.wacc.toFixed(1)+'%',Math.abs(wNeeded-r.wacc).toFixed(1)+'pp'],
+    ['FY2027E revenue',(r.totalRevs[0]/1000).toFixed(2)+'T','~$0.39T','—'],
+    ['FY2036E FCF','—','$'+Math.round(r.fcfs[9])+'B','—'],
+    ['LTM P/FCF implied',(MKT_CAP/96.7).toFixed(1)+'×',(MKT_CAP/r.fcfs[0]).toFixed(1)+'× (FY27E)','—'],
+    ['EV/FY27 EBIT',(MKT_CAP/r.ebit[0]).toFixed(1)+'×','—','—'],
+    ['Terminal value % of EV','—',(r.pvtv/r.ev*100).toFixed(0)+'%','sensitive to WACC/TGR'],
+  ];
+  let tbl='<tr><th style="text-align:left">Metric</th><th>Market-implied</th><th>Your model</th><th>Gap / note</th></tr>';
+  tblRows.forEach(([l,mi,m,g])=>tbl+=`<tr><td>${l}</td><td>${mi}</td><td>${m}</td><td style="color:var(--t3)">${g}</td></tr>`);
+  document.getElementById('context-table').innerHTML=tbl;
+
+  // Risk factors
+  const risks=[
+    ['🔴 Custom ASIC competition','Google TPU v6, Amazon Trainium 3, Microsoft Maia 2, and Meta MTIA could reduce hyperscaler NVDA spending if they reach parity in $/FLOP efficiency.'],
+    ['🔴 Export control escalation','Further US-China chip restrictions could eliminate $10–20B+ in annual Data Center revenue. China was ~10–15% of DC rev pre-2023 restrictions.'],
+    ['🟡 CapEx normalization','FY2026 CapEx was $6.0B (2.8% of revenue, up from $3.2B in FY25). NVIDIA guided higher FY27 CapEx for infrastructure. If hyperscaler AI spend plateaus, growth could revert.'],
+    ['🟡 Customer concentration','~40% of Data Center revenue comes from top 5 hyperscalers. Any pause in their CapEx cycles creates near-term revenue risk.'],
+    ['🟢 CUDA ecosystem moat','10M+ developers, 4,000+ software packages, NIM inference microservices, and NVLINK/NVSwitch topology create high switching costs.'],
+    ['🟢 Automotive long cycle','DRIVE Thor wins with BYD, Mercedes, Li Auto create multi-year contracted revenue. Robotics (Jetson) adds diversification.'],
+  ];
+  document.getElementById('risk-factors').innerHTML=risks.map(([h,b])=>
+    `<div style="margin-bottom:8px"><strong>${h}</strong><br>${b}</div>`).join('');
+}
+
+/* ── Accordion ── */
+function toggleAcc(hdr){
+  hdr.classList.toggle('open');
+  hdr.nextElementSibling.classList.toggle('open');
+}
+
+/* ── Presets ── */
+function applyPreset(name){
+  const p=PRESETS[name];
+  const numFields=['rf','erp','beta','kd','dw','tax','reg','dc-g1','dc-gt','gam-g1','gam-gt',
+    'pv-g1','pv-gt','auto-g1','auto-gt','oem-g1','oem-gt','m1','m10','cx1','cx2','nwc','tgr','exit-mult','cash','shares'];
+  numFields.forEach(f=>{if(p[f]!==undefined&&document.getElementById('i-'+f)) document.getElementById('i-'+f).value=p[f];});
+  // Sentiment options
+  if(p.moat) setOpt('moat',p.moat);
+  if(p.aiCycle) setOpt('ai-cycle',p.aiCycle);
+  if(p.mktSent) setOpt('mkt-sent',p.mktSent);
+  if(p.growthShape) setOpt('growth-shape',p.growthShape);
+  if(p.export) document.getElementById('i-export').value=p.export;
+  if(p.concentration) document.getElementById('i-concentration').value=p.concentration;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.preset-btn').forEach(b=>{if(b.textContent.toLowerCase()===name)b.classList.add('active');});
+  updateWacc();
+}
+function setOpt(group,val){
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(el=>{
+    el.classList.toggle('selected',el.dataset.val===String(val));
+  });
+}
+
+/* ══════════════════════════════════════════════
+   RELATIVE VALUATION — MULTIPLES
+   ══════════════════════════════════════════════ */
+// FY26 actual financials (10-K)
+const ACT={rev:215.94,ebit:130.39,ebitda:133.23,ni:120.07,eps:4.90,fcf:96.70,shares:24.30,cash:54.09};
+
+// Peer data: NTM multiples, approximate mid-2026
+const PEERS=[
+  {n:'AMD',   pe:28, ev_rev:7.0, ev_ebitda:22, ev_ebit:30, ev_fcf:35, note:'AI GPU challenger'},
+  {n:'AVGO',  pe:30, ev_rev:12,  ev_ebitda:22, ev_ebit:25, ev_fcf:28, note:'AI networking/ASIC'},
+  {n:'QCOM',  pe:16, ev_rev:4.0, ev_ebitda:13, ev_ebit:17, ev_fcf:18, note:'Mobile/IoT/Auto'},
+  {n:'TSM',   pe:22, ev_rev:9.0, ev_ebitda:14, ev_ebit:20, ev_fcf:25, note:'Leading foundry'},
+  {n:'ASML',  pe:32, ev_rev:11,  ev_ebitda:25, ev_ebit:28, ev_fcf:38, note:'EUV monopoly'},
+  {n:'INTC',  pe:35, ev_rev:2.0, ev_ebitda:10, ev_ebit:22, ev_fcf:null,note:'Foundry recovery'},
+];
+
+function medianOf(arr){
+  const s=[...arr].filter(v=>v!=null).sort((a,b)=>a-b);
+  const m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
+}
+function fmt1(v){return v==null?'—':v.toFixed(1)+'×'}
+function fmtPxN(v){return v==null?'—':'$'+v.toFixed(2)}
+function colorCell(v,ref){
+  if(v==null) return '';
+  return v>ref?'color:var(--red)':'color:var(--green)';
+}
+
+function buildMultiples(r){
+  const mktCap=CURR*ACT.shares;      // $B
+  const ev_curr=mktCap-ACT.cash;     // $B
+
+  // FY27E from model
+  const rev27=r.totalRevs[0];
+  const ebit27=r.ebit[0];
+  const ebitda27=ebit27+r.da[0];
+  const eps27=ebit27*(1-r.tax/100)/ACT.shares;
+  const fcf27=r.fcfs[0];
+
+  // ── NVDA multiples table ──
+  const mults=[
+    {l:'P/E',           tr:(CURR/ACT.eps),    fw:(CURR/eps27)},
+    {l:'EV/Revenue',    tr:(ev_curr/ACT.rev),  fw:(ev_curr/rev27)},
+    {l:'EV/EBITDA',     tr:(ev_curr/ACT.ebitda),fw:(ev_curr/ebitda27)},
+    {l:'EV/EBIT',       tr:(ev_curr/ACT.ebit), fw:(ev_curr/ebit27)},
+    {l:'EV/FCF',        tr:(ev_curr/ACT.fcf),  fw:(ev_curr/fcf27)},
+  ];
+  document.getElementById('nvda-mult-table').innerHTML=
+    `<thead><tr><th>Multiple</th><th class="num">Trailing (FY26A)</th><th class="num">Forward (FY27E)</th></tr></thead><tbody>`+
+    mults.map(m=>`<tr><td>${m.l}</td><td class="num">${fmt1(m.tr)}</td><td class="num">${fmt1(m.fw)}</td></tr>`).join('')+
+    `</tbody>`;
+
+  // ── Peer comparison ──
+  const med={
+    pe:medianOf(PEERS.map(p=>p.pe)),
+    ev_rev:medianOf(PEERS.map(p=>p.ev_rev)),
+    ev_ebitda:medianOf(PEERS.map(p=>p.ev_ebitda)),
+    ev_ebit:medianOf(PEERS.map(p=>p.ev_ebit)),
+    ev_fcf:medianOf(PEERS.map(p=>p.ev_fcf)),
+  };
+  const nvda_fw={pe:CURR/eps27,ev_rev:ev_curr/rev27,ev_ebitda:ev_curr/ebitda27,ev_ebit:ev_curr/ebit27,ev_fcf:ev_curr/fcf27};
+  let pt=`<thead><tr><th>Company</th><th class="num">P/E</th><th class="num">EV/Rev</th><th class="num">EV/EBITDA</th><th class="num">EV/EBIT</th><th class="num">EV/FCF</th></tr></thead><tbody>`;
+  PEERS.forEach(p=>{
+    pt+=`<tr title="${p.note}"><td>${p.n}</td><td class="num">${fmt1(p.pe)}</td><td class="num">${fmt1(p.ev_rev)}</td><td class="num">${fmt1(p.ev_ebitda)}</td><td class="num">${fmt1(p.ev_ebit)}</td><td class="num">${fmt1(p.ev_fcf)}</td></tr>`;
+  });
+  pt+=`<tr class="med-row"><td>Peer Median</td><td class="num">${fmt1(med.pe)}</td><td class="num">${fmt1(med.ev_rev)}</td><td class="num">${fmt1(med.ev_ebitda)}</td><td class="num">${fmt1(med.ev_ebit)}</td><td class="num">${fmt1(med.ev_fcf)}</td></tr>`;
+  pt+=`<tr class="nvda-row"><td><strong>NVDA (fwd)</strong></td><td class="num" style="${colorCell(nvda_fw.pe,med.pe)}">${fmt1(nvda_fw.pe)}</td><td class="num" style="${colorCell(nvda_fw.ev_rev,med.ev_rev)}">${fmt1(nvda_fw.ev_rev)}</td><td class="num" style="${colorCell(nvda_fw.ev_ebitda,med.ev_ebitda)}">${fmt1(nvda_fw.ev_ebitda)}</td><td class="num" style="${colorCell(nvda_fw.ev_ebit,med.ev_ebit)}">${fmt1(nvda_fw.ev_ebit)}</td><td class="num" style="${colorCell(nvda_fw.ev_fcf,med.ev_fcf)}">${fmt1(nvda_fw.ev_fcf)}</td></tr>`;
+  pt+=`</tbody>`;
+  document.getElementById('peer-mult-table').innerHTML=pt;
+
+  // ── Implied prices from peer medians (FY27E) ──
+  const impliedPE   = eps27>0 ? med.pe*eps27 : null;
+  const impliedEvRev= (med.ev_rev*rev27+ACT.cash)/ACT.shares;
+  const impliedEvEb = (med.ev_ebitda*ebitda27+ACT.cash)/ACT.shares;
+  const impliedEvEbit=(med.ev_ebit*ebit27+ACT.cash)/ACT.shares;
+  const impliedEvFcf= (med.ev_fcf*fcf27+ACT.cash)/ACT.shares;
+  const implieds=[
+    {l:'P/E (peer median)',       mult:med.pe,  base:`FY27E EPS $${eps27.toFixed(2)}`,px:impliedPE},
+    {l:'EV/Revenue (peer median)',mult:med.ev_rev,base:`FY27E Rev $${Math.round(rev27)}B`,px:impliedEvRev},
+    {l:'EV/EBITDA (peer median)', mult:med.ev_ebitda,base:`FY27E EBITDA $${Math.round(ebitda27)}B`,px:impliedEvEb},
+    {l:'EV/EBIT (peer median)',   mult:med.ev_ebit,base:`FY27E EBIT $${Math.round(ebit27)}B`,px:impliedEvEbit},
+    {l:'EV/FCF (peer median)',    mult:med.ev_fcf, base:`FY27E FCF $${Math.round(fcf27)}B`,px:impliedEvFcf},
+  ];
+  let it=`<thead><tr><th>Method</th><th class="num">Peer Median</th><th>Base Metric</th><th class="num">Implied Price</th><th class="num">vs. Market ($${CURR})</th></tr></thead><tbody>`;
+  implieds.forEach(d=>{
+    const diff=d.px!=null?((d.px/CURR-1)*100):null;
+    const clr=diff==null?'':(diff>0?'color:var(--green)':'color:var(--red)');
+    it+=`<tr><td>${d.l}</td><td class="num">${fmt1(d.mult)}</td><td>${d.base}</td><td class="num"><strong>${fmtPxN(d.px)}</strong></td><td class="num" style="${clr}">${diff!=null?(diff>0?'+':'')+diff.toFixed(1)+'%':'—'}</td></tr>`;
+  });
+  // Average
+  const validPxs=implieds.map(d=>d.px).filter(v=>v!=null);
+  const avgPx=validPxs.reduce((a,b)=>a+b,0)/validPxs.length;
+  const avgDiff=(avgPx/CURR-1)*100;
+  it+=`<tr class="r-total"><td colspan="3">Average of 5 methods</td><td class="num">$${avgPx.toFixed(2)}</td><td class="num" style="${avgDiff>0?'color:var(--green)':'color:var(--red)'}">${avgDiff>0?'+':''}${avgDiff.toFixed(1)}%</td></tr>`;
+  it+=`</tbody>`;
+
+  // Unified result banner
+  const loImplied=Math.min(...validPxs), hiImplied=Math.max(...validPxs);
+  _vm.multAvg=avgPx; _vm.multLo=loImplied; _vm.multHi=hiImplied;
+  renderValResult('mult-result','Peer Multiples Avg',avgPx,[
+    {label:'Range',val:`$${Math.round(loImplied)}–$${Math.round(hiImplied)}`,sub:'Min–max of 5 methods'},
+    {label:'Methods',val:validPxs.length+'',sub:'P/E · EV/Rev · EV/EBITDA · EV/EBIT · EV/FCF'},
+  ]);
+
+  document.getElementById('implied-mult-table').innerHTML=it;
+
+  // Mini football field
+  const allPxs=[...validPxs,r.px,CURR].sort((a,b)=>a-b);
+  const lo=Math.min(...allPxs)*0.85, hi=Math.max(...allPxs)*1.1;
+  const toX=v=>((v-lo)/(hi-lo)*100).toFixed(1)+'%';
+  let ff=`<div style="position:relative;height:32px;background:var(--bg3);border-radius:6px;overflow:hidden;margin-bottom:4px">`;
+  const bands=[
+    {lo:Math.min(...validPxs),hi:Math.max(...validPxs),color:'rgba(59,130,246,.25)',label:'Multiples range'},
+  ];
+  bands.forEach(b=>{
+    ff+=`<div style="position:absolute;top:0;bottom:0;left:${toX(b.lo)};width:${((b.hi-b.lo)/(hi-lo)*100).toFixed(1)}%;background:${b.color}"></div>`;
+  });
+  const markers=[
+    {v:r.px,color:'var(--blue)',label:'DCF'},
+    {v:avgPx,color:'var(--amber)',label:'Avg mult'},
+    {v:CURR,color:'var(--red)',label:'Market'},
+  ];
+  markers.forEach(m=>{
+    ff+=`<div title="${m.label}: $${m.v.toFixed(2)}" style="position:absolute;top:4px;bottom:4px;left:${toX(m.v)};width:3px;background:${m.color};border-radius:2px"></div>`;
+  });
+  ff+=`</div><div class="legend">`;
+  markers.forEach(m=>ff+=`<span><span class="dot" style="background:${m.color}"></span>${m.label}: $${m.v.toFixed(2)}</span>`);
+  ff+=`</div>`;
+  document.getElementById('mult-football').innerHTML=ff;
+}
+
+/* ══════════════════════════════════════════════
+   SOTP — SUM OF THE PARTS
+   ══════════════════════════════════════════════ */
+// Default EV/Revenue multiples per segment
+const SOTP_DEFS=[
+  {id:'dc',   mult:22, rationale:'AI infra / cloud-scale data center'},
+  {id:'gam',  mult:6,  rationale:'Consumer GPU, Mobileye-adj comp'},
+  {id:'pv',   mult:8,  rationale:'Enterprise workstation hardware'},
+  {id:'auto', mult:12, rationale:'AV/autonomy software content premium'},
+  {id:'oem',  mult:4,  rationale:'OEM / embedded, commodity-like'},
+];
+
+function getSotpMultiple(id){
+  const el=document.getElementById('sotp-m-'+id);
+  return el?parseFloat(el.value)||0:SOTP_DEFS.find(d=>d.id===id).mult;
+}
+
+function buildSOTP(r){
+  if(!r) return;
+  const useYr=getOpt('sotp-yr')||'fy26';
+  let st=`<thead><tr><th>Segment</th><th class="num">Revenue ($B)</th><th class="num" style="width:90px">EV/Revenue</th><th class="num">Segment EV ($B)</th><th>Rationale</th></tr></thead><tbody>`;
+  let totalEV=0;
+  SEG_DEFS.forEach((seg,i)=>{
+    const def=SOTP_DEFS[i];
+    const segObj=r.segRevs.find(s=>s.id===seg.id);
+    const rev=useYr==='fy26'?seg.fy26:(segObj?segObj.revs[0]:seg.fy26);
+    const multVal=getSotpMultiple(seg.id);
+    const segEV=rev*multVal;
+    totalEV+=segEV;
+    st+=`<tr>
+      <td><span class="seg-dot" style="background:${seg.color};display:inline-block;margin-right:6px;vertical-align:middle"></span>${seg.name}</td>
+      <td class="num">$${rev.toFixed(1)}B</td>
+      <td class="num"><input type="number" class="sotp-mult-inp" id="sotp-m-${seg.id}" value="${multVal}" step="0.5" min="1" max="80" oninput="buildSOTP(_lastResult)"></td>
+      <td class="num">$${Math.round(segEV)}B</td>
+      <td style="font-size:11px;color:var(--t2)">${def.rationale}</td>
+    </tr>`;
+  });
+  const cash=ACT.cash;
+  const equity=totalEV+cash;
+  const impliedPx=equity/ACT.shares;
+  const updown=(impliedPx/CURR-1)*100;
+  st+=`<tr class="r-total"><td>Total Segment EV</td><td class="num"></td><td class="num"></td><td class="num">$${Math.round(totalEV)}B</td><td></td></tr>`;
+  st+=`<tr><td style="color:var(--t2)">(+) Net cash & securities</td><td class="num"></td><td class="num"></td><td class="num">$${cash.toFixed(0)}B</td><td style="font-size:11px;color:var(--t3)">Cash $10.6B + Sec $52.0B − Debt $8.5B</td></tr>`;
+  st+=`<tr class="r-total"><td>Equity Value</td><td class="num"></td><td class="num"></td><td class="num">$${Math.round(equity)}B</td><td></td></tr>`;
+  st+=`</tbody>`;
+  document.getElementById('sotp-table').innerHTML=st;
+
+  _vm.sotp=impliedPx;
+  const dcPct=(SEG_DEFS[0].fy26/215.94*100).toFixed(1);
+  const dcEvPct=(totalEV>0?SEG_DEFS[0].fy26*getSotpMultiple('dc')/totalEV*100:0).toFixed(1);
+  renderValResult('sotp-result','SOTP Implied',impliedPx,[
+    {label:'Total Seg EV', val:'$'+Math.round(totalEV)+'B', sub:'Σ segment × multiple'},
+    {label:'Equity Value',  val:'$'+Math.round(equity)+'B',  sub:'EV + net cash'},
+    {label:'DC EV weight',  val:dcEvPct+'%',                 sub:dcPct+'% of rev → '+dcEvPct+'% EV'},
+  ]);
+
+  buildPEG(r);
+}
+
+/* ══════════════════════════════════════════════
+   PEG RATIO
+   ══════════════════════════════════════════════ */
+function buildPEG(r){
+  const pe_tr=CURR/ACT.eps;                            // trailing P/E
+  const eps27=r.ebit[0]*(1-r.tax/100)/ACT.shares;
+  const pe_fw=eps27>0?CURR/eps27:null;                 // forward P/E
+
+  // 5-yr EPS CAGR implied by model: (eps at yr5 / eps26)^0.2 - 1
+  const eps_y5=r.ebit[4]*(1-r.tax/100)/ACT.shares;
+  const impliedCagr=eps_y5>0?((eps_y5/ACT.eps)**0.2-1)*100:null;
+
+  const pegTr=pe_tr/(g('peg-growth')||30);
+  const pegFw=pe_fw!=null?pe_fw/(g('peg-growth')||30):null;
+
+  document.getElementById('peg-table').innerHTML=`
+    <thead><tr><th>Metric</th><th class="num">Value</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>EPS FY26A (actual)</td><td class="num">$4.90</td><td style="font-size:11px;color:var(--t2)">10-K diluted EPS</td></tr>
+      <tr><td>EPS FY27E (model)</td><td class="num">$${eps27.toFixed(2)}</td><td style="font-size:11px;color:var(--t2)">EBIT×(1−tax)÷shares</td></tr>
+      <tr><td>Trailing P/E (FY26A)</td><td class="num">${pe_tr.toFixed(1)}×</td><td style="font-size:11px;color:var(--t2)">$${CURR}÷$4.90</td></tr>
+      <tr><td>Forward P/E (FY27E)</td><td class="num">${pe_fw!=null?pe_fw.toFixed(1)+'×':'—'}</td><td style="font-size:11px;color:var(--t2)">$${CURR}÷$${eps27.toFixed(2)}</td></tr>
+      <tr><td>Model-implied 5yr EPS CAGR</td><td class="num">${impliedCagr!=null?impliedCagr.toFixed(1)+'%':'—'}</td><td style="font-size:11px;color:var(--t2)">FY26A→FY31E from DCF</td></tr>
+      <tr><td>Trailing PEG (at ${g('peg-growth')||30}% growth)</td><td class="num" style="${pegTr<1?'color:var(--green)':pegTr>2?'color:var(--red)':'color:var(--amber)'}">${pegTr.toFixed(2)}×</td><td style="font-size:11px;color:var(--t2)">P/E ÷ growth rate</td></tr>
+      ${pegFw!=null?`<tr><td>Forward PEG (at ${g('peg-growth')||30}% growth)</td><td class="num" style="${pegFw<1?'color:var(--green)':pegFw>2?'color:var(--red)':'color:var(--amber)'}">${pegFw.toFixed(2)}×</td><td style="font-size:11px;color:var(--t2)">Fwd P/E ÷ growth rate</td></tr>`:''}
+    </tbody>`;
+
+  updatePEG();
+  buildPEGSensitivity();
+}
+
+function updatePEG(){
+  const growth=g('peg-growth')||30;
+  const targetPEG=g('peg-target')||1.5;
+  const pe_tr=CURR/ACT.eps;
+  const impliedPE=targetPEG*growth;
+  const impliedPxTr=impliedPE*ACT.eps;
+  const diff=(impliedPxTr/CURR-1)*100;
+  const currentPEG=pe_tr/growth;
+  _vm.peg=impliedPxTr;
+  renderValResult('peg-implied','PEG Implied',impliedPxTr,[
+    {label:'Implied P/E',   val:impliedPE.toFixed(1)+'×', sub:`${targetPEG}× PEG × ${growth}% growth`},
+    {label:'Current PEG',   val:currentPEG.toFixed(2)+'×',
+     sub:currentPEG<targetPEG?'Below target (cheap on PEG)':'Above target (rich on PEG)',
+     cls:currentPEG<targetPEG?'green':'red'},
+  ],`At <strong>${growth}% EPS growth</strong> and PEG target <strong>${targetPEG}×</strong>: Implied P/E = ${impliedPE.toFixed(1)}× × $4.90 EPS = <strong>${fmtPx(impliedPxTr)}</strong>. Current trailing PEG = ${currentPEG.toFixed(2)}×.`);
+  buildPEGSensitivity();
+}
+
+function buildPEGSensitivity(){
+  const GROWTHS=[15,20,25,30,35,40,50];
+  const TARGETS=[1.0,1.25,1.5,2.0,2.5];
+  let h=`<thead><tr><th>Growth%↓ / PEG→</th>`;
+  TARGETS.forEach(t=>h+=`<th class="num">${t}×</th>`);
+  h+=`</tr></thead><tbody>`;
+  const curG=g('peg-growth')||30, curT=g('peg-target')||1.5;
+  GROWTHS.forEach(gRow=>{
+    h+=`<tr>`;
+    h+=`<td style="font-weight:600">${gRow}%</td>`;
+    TARGETS.forEach(tCol=>{
+      const px=tCol*gRow*ACT.eps;
+      const isCurr=Math.abs(gRow-curG)<1&&Math.abs(tCol-curT)<0.01;
+      const cls=isCurr?'bdg-gold':(px>=CURR?'':'');
+      const style=isCurr?'background:var(--amber-lt);font-weight:700':px>=CURR?'color:var(--green)':'color:var(--red)';
+      h+=`<td class="num" style="${style}">$${px.toFixed(0)}</td>`;
+    });
+    h+=`</tr>`;
+  });
+  h+=`</tbody>`;
+  document.getElementById('peg-sens-table').innerHTML=h;
+}
+
+/* ── Tab switching ── */
+function switchTab(id,btn){
+  document.querySelectorAll('.rpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('rp-'+id).classList.add('active');
+  btn.classList.add('active');
+  
+}
+
+/* ── Financials tab ── */
+function showFinTab(tab,btn){
+  ['income','balance','cashflow'].forEach(t=>
+    document.getElementById('fin-'+t).style.display=t===tab?'':'none');
+  document.querySelectorAll('.fin-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+(function buildFinancials(){
+  // Years
+  const YRS=['FY22','FY23','FY24','FY25','FY26E'];
+  const fB=v=>v===null?'—':'$'+Math.abs(v).toFixed(2);
+  const fBig=v=>v===null?'—':(v<0?'(':'')+'$'+Math.abs(v).toFixed(1)+(v<0?')':'');
+  const fPct=v=>v===null?'—':v.toFixed(1)+'%';
+  const fX=v=>v===null?'—':v.toFixed(2)+'×';
+  const fEPS=v=>v===null?'—':'$'+v.toFixed(2);
+  const fGrowth=(curr,prev)=>prev&&prev>0?((curr/prev-1)*100):null;
+  const gSpan=v=>{
+    if(v===null) return '';
+    const s=v>=0?'+':'';
+    const col=v>=0?'var(--green)':'var(--red)';
+    return `<span style="font-size:10px;color:${col};margin-left:4px">${s}${v.toFixed(0)}%</span>`;
+  };
+
+  // ── INCOME STATEMENT ──
+  const IS={
+    rev:    [26.91, 26.97, 60.92,130.50,215.94],
+    cogs:   [ 9.44, 11.62, 16.62, 32.64, 54.86],
+    gp:     [17.47, 15.35, 44.30, 97.86,161.08],
+    rd:     [ 5.27,  7.34,  8.68, 12.91, 17.50],
+    sm:     [ 1.14,  1.03,  1.08,  1.35,  1.80],
+    ga:     [ 0.69,  0.62,  0.63,  0.72,  1.00],
+    opex:   [ 7.10,  9.00, 10.40, 15.00, 20.30],
+    ebit:   [10.04,  4.22, 32.97, 81.45,140.78],
+    intnet: [ 0.11,  0.24,  0.93,  2.23,  3.50],
+    pretax: [10.15,  4.46, 33.90, 83.68,144.28],
+    tax:    [ 0.40,  0.09,  4.14, 10.80, 18.18],
+    ni:     [ 9.75,  4.37, 29.76, 72.88,126.10],
+    eps:    [ 0.39,  0.17,  1.19,  2.94,  5.16],
+    shs:    [25.2,  25.3,  24.7,  24.6,  24.5],
+  };
+  const mkRow=(label,data,fmt,cls='',addGrowth=false)=>{
+    const cells=data.map((v,i)=>{
+      const g=addGrowth&&i>0?gSpan(fGrowth(v,data[i-1])):'';
+      return `<td class="num">${fmt(v)}${g}</td>`;
+    }).join('');
+    return `<tr class="${cls}"><td>${label}</td>${cells}</tr>`;
+  };
+  const mkPct=(label,num,den)=>{
+    const cells=num.map((v,i)=>`<td class="num">${fPct(v/den[i]*100)}</td>`).join('');
+    return `<tr class="fin-pct"><td style="padding-left:12px">${label}</td>${cells}</tr>`;
+  };
+  const mkSec=label=>`<tr class="fin-sec"><td colspan="6">${label}</td></tr>`;
+
+  let is='';
+  is+=mkSec('Revenue');
+  is+=mkRow('Total Revenue',IS.rev,fBig,'fin-hi',true);
+  is+=mkRow('Cost of Revenue',IS.cogs,fBig,'fin-sub');
+  is+=mkRow('Gross Profit',IS.gp,fBig,'fin-total fin-hi');
+  is+=mkPct('Gross Margin',IS.gp,IS.rev);
+  is+=mkSec('Operating Expenses');
+  is+=mkRow('Research & Development',IS.rd,fBig,'fin-sub');
+  is+=mkRow('Sales & Marketing',IS.sm,fBig,'fin-sub');
+  is+=mkRow('General & Administrative',IS.ga,fBig,'fin-sub');
+  is+=mkRow('Total Operating Expenses',IS.opex,fBig,'fin-total');
+  is+=mkSec('Profitability');
+  is+=mkRow('Operating Income (EBIT)',IS.ebit,fBig,'fin-total fin-hi',true);
+  is+=mkPct('Operating Margin',IS.ebit,IS.rev);
+  is+=mkRow('Net Interest & Other',IS.intnet,fBig,'fin-sub');
+  is+=mkRow('Pre-tax Income',IS.pretax,fBig,'fin-sub');
+  is+=mkRow('Income Tax',IS.tax,fBig,'fin-sub');
+  is+=mkRow('Net Income',IS.ni,fBig,'fin-total fin-hi',true);
+  is+=mkPct('Net Margin',IS.ni,IS.rev);
+  is+=mkSec('Per Share (split-adjusted*)');
+  is+=mkRow('Diluted EPS',IS.eps,fEPS,'fin-hi',true);
+  is+=mkRow('Diluted Shares (B)',IS.shs,v=>v.toFixed(1),'fin-sub');
+  document.getElementById('is-body').innerHTML=is;
+
+  // ── BALANCE SHEET ──
+  const BS={
+    cash:   [ 1.99,  3.39,  7.28,  8.59, 24.00],
+    stinv:  [ 9.01,  9.91, 18.70, 26.00, 38.00],
+    ar:     [ 4.65,  3.83,  9.99, 17.89, 28.00],
+    inv:    [ 2.60,  5.16,  5.28,  8.71, 12.00],
+    othca:  [ 2.05,  0.81,  3.10,  4.54,  8.00],
+    tca:    [20.30, 23.10, 44.35, 65.73,110.00],
+    ppe:    [ 3.73,  3.81,  4.17,  6.93, 12.00],
+    gw:     [ 4.35,  4.43,  4.43,  4.57,  4.60],
+    intang: [ 2.60,  1.69,  1.12,  0.94,  0.70],
+    ta:     [44.19, 41.18, 65.73,111.60,185.00],
+    ap:     [ 1.99,  1.46,  2.70,  4.47,  8.00],
+    accr:   [ 2.21,  2.39,  5.01,  7.99, 12.00],
+    tcl:    [ 5.08,  6.96, 10.63, 16.05, 25.00],
+    ltd:    [10.93,  9.70,  8.46,  8.46,  8.50],
+    tl:     [18.63, 18.80, 22.13, 32.97, 45.00],
+    eq:     [26.08, 22.13, 42.98, 78.12,140.00],
+    netcash:[0.07,  3.60, 17.52, 26.13, 53.50],
+  };
+  let bs='';
+  bs+=mkSec('Assets');
+  bs+=mkRow('Cash & Equivalents',BS.cash,fBig,'fin-sub');
+  bs+=mkRow('Short-term Investments',BS.stinv,fBig,'fin-sub');
+  bs+=mkRow('Accounts Receivable',BS.ar,fBig,'fin-sub');
+  bs+=mkRow('Inventories',BS.inv,fBig,'fin-sub');
+  bs+=mkRow('Other Current Assets',BS.othca,fBig,'fin-sub');
+  bs+=mkRow('Total Current Assets',BS.tca,fBig,'fin-total');
+  bs+=mkRow('PP&E (net)',BS.ppe,fBig,'fin-sub');
+  bs+=mkRow('Goodwill',BS.gw,fBig,'fin-sub');
+  bs+=mkRow('Intangible Assets',BS.intang,fBig,'fin-sub');
+  bs+=mkRow('Total Assets',BS.ta,fBig,'fin-total fin-hi');
+  bs+=mkSec('Liabilities');
+  bs+=mkRow('Accounts Payable',BS.ap,fBig,'fin-sub');
+  bs+=mkRow('Accrued Liabilities',BS.accr,fBig,'fin-sub');
+  bs+=mkRow('Total Current Liabilities',BS.tcl,fBig,'fin-total');
+  bs+=mkRow('Long-term Debt',BS.ltd,fBig,'fin-sub');
+  bs+=mkRow('Total Liabilities',BS.tl,fBig,'fin-total');
+  bs+=mkSec('Equity & Key Metrics');
+  bs+=mkRow('Stockholders\' Equity',BS.eq,fBig,'fin-total fin-hi');
+  bs+=mkRow('Net Cash (Cash − Debt)',BS.netcash,fBig,'fin-hi');
+  document.getElementById('bs-body').innerHTML=bs;
+
+  // ── CASH FLOW ──
+  const CF={
+    ni:     [ 9.75,  4.37, 29.76, 72.88,126.10],
+    da:     [ 1.06,  1.54,  1.56,  2.02,  3.50],
+    sbc:    [ 1.22,  2.00,  3.55,  4.77,  6.50],
+    wc:     [-2.80, -3.63,  3.27, -4.08, -5.00],
+    ocf:    [ 9.11,  5.64, 28.08, 64.09,120.00],
+    capex:  [-0.98, -1.83, -1.07, -3.25, -6.00],
+    fcf:    [ 8.13,  3.81, 27.01, 60.84,114.00],
+    invest: [-4.24, -4.75,-25.47,-25.90,-45.00],
+    buyback:[-7.99,-10.04,-24.16,-35.45,-50.00],
+    divs:   [-0.39, -0.40, -0.40, -0.53, -0.60],
+    finact: [-8.38,-10.44,-24.56,-35.98,-50.60],
+    netdelta:[-3.51,  1.50,-22.36, -4.27, 20.00],
+  };
+  const fCF=v=>v===null?'—':(v<0?'(':'')+'$'+Math.abs(v).toFixed(2)+(v<0?')':'');
+  let cf='';
+  cf+=mkSec('Operating Activities');
+  cf+=mkRow('Net Income',CF.ni,fCF,'fin-sub');
+  cf+=mkRow('(+) D&A',CF.da,fCF,'fin-sub');
+  cf+=mkRow('(+) Stock-based Compensation',CF.sbc,fCF,'fin-sub');
+  cf+=mkRow('(±) Working Capital Changes',CF.wc,fCF,'fin-sub');
+  cf+=mkRow('Operating Cash Flow',CF.ocf,fCF,'fin-total fin-hi',true);
+  cf+=mkSec('Investing Activities');
+  cf+=mkRow('Capital Expenditures',CF.capex,fCF,'fin-sub');
+  cf+=mkRow('Free Cash Flow (OCF − CapEx)',CF.fcf,fCF,'fin-total fin-hi',true);
+  cf+=mkRow('Net Investments & Acquisitions',CF.invest,fCF,'fin-sub');
+  cf+=mkSec('Financing Activities');
+  cf+=mkRow('Share Repurchases',CF.buyback,fCF,'fin-sub');
+  cf+=mkRow('Dividends Paid',CF.divs,fCF,'fin-sub');
+  cf+=mkRow('Total Financing Activities',CF.finact,fCF,'fin-total');
+  cf+=mkSec('Summary');
+  cf+=mkRow('Net Change in Cash',CF.netdelta,fCF,'fin-hi');
+  document.getElementById('cf-body').innerHTML=cf;
+})();
+
+/* ── Company tab: embedded historical prices (no API call) ──
+   All prices split-adjusted to post-10:1 (Jun 2024) basis.
+   Live point appended from CURR fetched by Finnhub quote.          */
+// NVDA monthly close prices, split-adjusted (÷10 pre-Jun 2024).
+// ★ = estimated for Jun 2025–May 2026 (bridge to live price).
+const NVDA_HIST_PX=[
+  ['2021-06-01',15.75],['2021-07-01',19.50],['2021-08-01',20.70],
+  ['2021-09-01',22.00],['2021-10-01',22.20],['2021-11-01',30.00],
+  ['2021-12-01',29.40],['2022-01-01',30.00],['2022-02-01',24.00],
+  ['2022-03-01',24.80],['2022-04-01',21.80],['2022-05-01',18.50],
+  ['2022-06-01',15.30],['2022-07-01',16.60],['2022-08-01',19.30],
+  ['2022-09-01',13.60],['2022-10-01',13.00],['2022-11-01',14.30],
+  ['2022-12-01',14.60],['2023-01-01',14.30],['2023-02-01',19.80],
+  ['2023-03-01',23.30],['2023-04-01',27.70],['2023-05-01',37.90],
+  ['2023-06-01',41.90],['2023-07-01',44.00],['2023-08-01',46.70],
+  ['2023-09-01',49.30],['2023-10-01',43.50],['2023-11-01',47.00],
+  ['2023-12-01',49.50],['2024-01-01',49.50],['2024-02-01',61.20],
+  ['2024-03-01',82.20],['2024-04-01',76.20],['2024-05-01',103.80],
+  ['2024-06-01',129.00],['2024-07-01',117.00],['2024-08-01',125.00],
+  ['2024-09-01',116.00],['2024-10-01',148.00],['2024-11-01',148.00],
+  ['2024-12-01',134.00],['2025-01-01',119.00],['2025-02-01',128.00],
+  ['2025-03-01',108.00],['2025-04-01',85.00],['2025-05-01',135.00],
+  // ★ estimated monthly closes Jun 2025 – May 2026
+  ['2025-06-01',145.00],['2025-07-01',152.00],['2025-08-01',158.00],
+  ['2025-09-01',148.00],['2025-10-01',163.00],['2025-11-01',171.00],
+  ['2025-12-01',161.00],['2026-01-01',172.00],['2026-02-01',182.00],
+  ['2026-03-01',188.00],['2026-04-01',195.00],['2026-05-01',203.00],
+];
+
+let _histChart=null;
+let _histRangeDays=1825;
+
+function loadCompanyTab(){
+  // Dynamic metrics from live price
+  document.getElementById('co-pe').textContent=(CURR/4.37).toFixed(1)+'×';
+  document.getElementById('co-mktcap').textContent='$'+(CURR*24.4/1000).toFixed(1)+'T';
+
+  // 52-week high/low from embedded data
+  const yr52cut=Date.now()-365*86400000;
+  const yr52=NVDA_HIST_PX.filter(d=>new Date(d[0]).getTime()>=yr52cut).map(d=>d[1]);
+  yr52.push(CURR);
+  if(yr52.length){
+    document.getElementById('co-range').textContent=
+      '$'+Math.min(...yr52).toFixed(0)+' – $'+Math.max(...yr52).toFixed(0);
+  }
+  renderPriceChart(_histRangeDays);
+}
+
+function renderPriceChart(days){
+  _histRangeDays=days;
+  const cutoff=Date.now()-days*86400000;
+
+  // Filter historical data by range, then append live point
+  const filtered=NVDA_HIST_PX.filter(d=>new Date(d[0]).getTime()>=cutoff);
+  const liveLabel='Live';
+  const allLabels=[...filtered.map(d=>{
+    const dt=new Date(d[0]);
+    return dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+  }),liveLabel];
+  const allPrices=[...filtered.map(d=>d[1]),CURR];
+
+  if(allPrices.length<2) return;
+  const start=allPrices[0];
+  const up=CURR>=start;
+  const col=up?'#22c55e':'#ef4444';
+
+  const firstLbl=allLabels[0], lastLbl=new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  document.getElementById('co-price-date').textContent=`${firstLbl} – ${lastLbl} (live)`;
+
+  const ctx=document.getElementById('c-hist-price').getContext('2d');
+  if(_histChart){_histChart.destroy();_histChart=null;}
+
+  const grad=ctx.createLinearGradient(0,0,0,300);
+  grad.addColorStop(0,up?'rgba(34,197,94,0.22)':'rgba(239,68,68,0.22)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+
+  // Point styling: only show dot on live point
+  const pointR=allPrices.map((_,i)=>i===allPrices.length-1?6:0);
+  const pointBg=allPrices.map((_,i)=>i===allPrices.length-1?col:'transparent');
+
+  // Sparse x-axis labels
+  const step=Math.max(1,Math.floor(allLabels.length/10));
+  const sparseLabels=allLabels.map((l,i)=>(i%step===0||i===allLabels.length-1)?l:'');
+
+  _histChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:sparseLabels,
+      datasets:[{
+        label:'NVDA',
+        data:allPrices,
+        borderColor:col,
+        borderWidth:2.5,
+        pointRadius:pointR,
+        pointBackgroundColor:pointBg,
+        pointHoverRadius:5,
+        fill:true,
+        backgroundColor:grad,
+        tension:0.35,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(15,23,42,0.92)',
+          titleFont:{size:11},bodyFont:{size:13},padding:10,
+          callbacks:{
+            title:items=>allLabels[items[0].dataIndex],
+            label:c=>'$'+c.raw.toFixed(2),
+            afterLabel:c=>{
+              const chg=((c.raw/start-1)*100);
+              return (chg>=0?'+':'')+chg.toFixed(1)+'% from period open';
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ticks:{font:{size:9.5},maxRotation:0,color:'rgba(107,114,128,0.9)'},
+           grid:{color:'rgba(0,0,0,.04)'}},
+        y:{position:'right',
+           ticks:{font:{size:10},callback:v=>'$'+v.toLocaleString(),color:'rgba(107,114,128,0.9)'},
+           grid:{color:'rgba(0,0,0,.04)'}}
+      }
+    }
+  });
+
+  // Sync active button
+  document.querySelectorAll('.pr-btn').forEach(b=>b.classList.remove('active'));
+  const map={365:'1Y',730:'2Y',1825:'5Y'};
+  document.querySelectorAll('.pr-btn').forEach(b=>{if(b.textContent===map[days])b.classList.add('active');});
+}
+
+function setPriceRange(days){
+  _histRangeDays=days;
+  renderPriceChart(days);
+}
+
+/* ── Live price auto-refresh ── */
+let _priceRefreshTimer=null;
+const FINNHUB_KEY='d8u8uv1r01qinhugi5j0d8u8uv1r01qinhugi5jg';
+
+function applyPrice(px,prev,source){
+  if(!px||isNaN(px)||px<=0) return false;
+  const chg=px-(prev||px), chgPct=(prev&&prev>0)?((chg/prev)*100):0;
+  CURR=px;
+  const mktCap=(px*24.4/1000).toFixed(2);
+  const sign=chg>=0?'+':'';
+  document.getElementById('live-px').textContent='$'+px.toFixed(2);
+  document.getElementById('live-px').style.color=chg>=0?'#4ade80':'#f87171';
+  document.getElementById('live-meta').innerHTML=
+    `<span style="opacity:.8">${sign}${chg.toFixed(2)} (${sign}${chgPct.toFixed(2)}%)</span>`+
+    `&nbsp;·&nbsp;$${mktCap}T mkt cap`+
+    `&nbsp;<span style="display:inline-block;width:6px;height:6px;border-radius:50%;`+
+    `background:#4ade80;vertical-align:middle;animation:blink 2s infinite" title="Live · ${source}"></span>`;
+  if(typeof runCalc==='function') runCalc();
+  return true;
+}
+
+async function fetchLivePrice(){
+  document.getElementById('live-meta').textContent='Fetching live price…';
+
+  // ── 1. Finnhub REST (direct — works when browser allows null origin) ──
+  try{
+    const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=NVDA&token=${FINNHUB_KEY}`,{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); if(applyPrice(j.c,j.pc,'Finnhub')) return; }
+  } catch(e){ console.warn('Finnhub REST:',e.message); }
+
+  // ── 2. Finnhub WebSocket — zero CORS restrictions ──
+  // (only yields data during market hours; times out in 4s otherwise)
+  const wsPx=await new Promise(res=>{
+    try{
+      const ws=new WebSocket(`wss://ws.finnhub.io?token=${FINNHUB_KEY}`);
+      const t=setTimeout(()=>{try{ws.close();}catch(_){}res(null);},4000);
+      ws.onopen=()=>ws.send(JSON.stringify({type:'subscribe',symbol:'NVDA'}));
+      ws.onmessage=e=>{
+        try{
+          const d=JSON.parse(e.data);
+          if(d.type==='trade'&&d.data?.length){
+            clearTimeout(t);ws.close();res(d.data[d.data.length-1].p);
+          }
+        }catch(_){}
+      };
+      ws.onerror=()=>{clearTimeout(t);res(null);};
+    }catch(e){res(null);}
+  });
+  if(wsPx&&applyPrice(wsPx,CURR,'Finnhub WS')) return;
+
+  // ── 3. Finnhub via allorigins proxy ──
+  try{
+    const url=`https://finnhub.io/api/v1/quote?symbol=NVDA&token=${FINNHUB_KEY}`;
+    const r=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url),{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); if(applyPrice(j.c,j.pc,'Finnhub+proxy')) return; }
+  } catch(e){ console.warn('Finnhub proxy:',e.message); }
+
+  // ── 4. Finnhub via thingproxy ──
+  try{
+    const url=`https://thingproxy.freeboard.io/fetch/https://finnhub.io/api/v1/quote?symbol=NVDA&token=${FINNHUB_KEY}`;
+    const r=await fetch(url,{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); if(applyPrice(j.c,j.pc,'Finnhub+tp')) return; }
+  } catch(e){ console.warn('Finnhub thingproxy:',e.message); }
+
+  console.error('All price sources failed — check console for details.');
+  document.getElementById('live-meta').textContent='Price unavailable · using $'+CURR.toFixed(2);
+}
+// Blink animation for live dot
+const _blink=document.createElement('style');
+_blink.textContent='@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}';
+document.head.appendChild(_blink);
+// Fetch immediately, then every 60 s
+fetchLivePrice();
+_priceRefreshTimer=setInterval(fetchLivePrice,60000);
+
+/* ── Init ── */
+updateWacc();
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT')runCalc();});
+</script>
+
+</body>
+</html>
