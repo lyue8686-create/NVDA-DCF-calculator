@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NVDA Broker Report · June 25, 2026</title>
+
+<style>
+  :root{--blue:#1d4ed8;--green:#15803d;--red:#b91c1c;--gold:#92400e;
+        --bg:#0f172a;--bg2:#1e293b;--bd:#334155;--t1:#f1f5f9;--t2:#94a3b8;--t3:#64748b;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+       background:var(--bg);color:var(--t1);padding:28px 32px;line-height:1.6;max-width:960px;margin:0 auto}
+  .rpt-header{border-bottom:2px solid var(--blue);padding-bottom:16px;margin-bottom:24px}
+  .rpt-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
+  .rpt-meta{font-size:11px;color:var(--t3);margin-top:4px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle}
+  .badge-buy{background:#14532d;color:#86efac}
+  .section{margin-bottom:24px}
+  .section-title{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.8px;
+                  text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;
+                  border-bottom:1px solid var(--bd)}
+  .card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:16px;margin-bottom:12px}
+  .kpi-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+  .kpi{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px 16px;flex:1;min-width:130px}
+  .kpi-label{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;margin-bottom:4px}
+  .kpi-val{font-size:21px;font-weight:800;color:var(--t1)}
+  .kpi-sub{font-size:10px;color:var(--t3);margin-top:2px}
+  .kpi-up{color:#4ade80}.kpi-dn{color:#f87171}
+  .news-item{padding:10px 0;border-bottom:1px solid var(--bd)}
+  .news-item:last-child{border-bottom:none}
+  .news-headline{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:3px}
+  .news-meta{font-size:10px;color:var(--t3)}
+  .news-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;margin-right:4px}
+  .tag-bull{background:#14532d;color:#86efac}.tag-bear{background:#7f1d1d;color:#fca5a5}.tag-neu{background:#1e293b;color:#94a3b8}
+  .sent-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:10px 0}
+  .sent-bull{background:#22c55e}.sent-neu{background:#475569}.sent-bear{background:#ef4444}
+  .chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;margin:3px 3px 3px 0}
+  .chip-risk{background:#7f1d1d;color:#fca5a5}
+  .chip-cat{background:#14532d;color:#86efac}
+  .chip-warn{background:#78350f;color:#fde68a}
+  .pt-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);font-size:12px}
+  .pt-row:last-child{border-bottom:none}
+  .highlight{background:rgba(59,130,246,.1);border-left:3px solid #3b82f6;
+             padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;margin:12px 0;color:var(--t2);line-height:1.7}
+  .warn-box{background:rgba(239,68,68,.08);border-left:3px solid #ef4444;
+            padding:10px 14px;border-radius:0 6px 6px 0;font-size:12px;margin:12px 0;color:var(--t2);line-height:1.7}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:600px){.two-col{grid-template-columns:1fr}}
+  .footer{font-size:10px;color:var(--t3);border-top:1px solid var(--bd);margin-top:24px;padding-top:12px;line-height:1.8}
+  a{color:#60a5fa;text-decoration:none}
+  a:hover{text-decoration:underline}
+  .divider{border:none;border-top:1px solid var(--bd);margin:16px 0}
+</style>
+
+</head>
+<body>
+
+<div class="rpt-header">
+  <div class="rpt-title">NVDA Weekly Broker Report
+    <span class="badge badge-buy">STRONG BUY</span>
+  </div>
+  <div class="rpt-meta">NVIDIA Corporation (NASDAQ: NVDA) &nbsp;·&nbsp; Week of June 25, 2026 &nbsp;·&nbsp; AI-generated via Claude &nbsp;·&nbsp; For informational purposes only</div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Price (Jun 24)</div>
+    <div class="kpi-val">$200.70</div>
+    <div class="kpi-sub kpi-up">+$1.70 (+0.8% WoW)</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Market Cap</div>
+    <div class="kpi-val">$4.89T</div>
+    <div class="kpi-sub">#2 globally</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Avg Analyst Target</div>
+    <div class="kpi-val">$298</div>
+    <div class="kpi-sub kpi-up">+49% upside · 38 analysts</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">DCF Implied (Base)</div>
+    <div class="kpi-val">~$175</div>
+    <div class="kpi-sub">WACC 11% · FY27 +82% DC spike</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Hyperscaler CapEx '26</div>
+    <div class="kpi-val">$700B</div>
+    <div class="kpi-sub kpi-up">75% AI-directed ($525B)</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Fed Funds Rate</div>
+    <div class="kpi-val">3.5–3.75%</div>
+    <div class="kpi-sub kpi-dn">Hold; hike risk in Oct</div>
+  </div>
+</div>
+
+<!-- Executive Summary -->
+<div class="section">
+  <div class="section-title">Executive Summary</div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--t2);line-height:1.85">
+      NVIDIA held its 2026 Annual Shareholder Meeting on June 24, with CEO Jensen Huang reaffirming
+      the Blackwell and Vera Rubin production ramp while flagging that U.S. national security interests
+      will take precedence over China market opportunities — reinforcing the bear-case risk around export
+      controls. On the product side, NVDA unveiled BioNeMo Agent Toolkit and Halos, its first full-stack
+      Physical AI safety system, signalling a broadening software moat beyond pure silicon.
+    </div>
+    <div class="highlight">
+      <strong>Key call:</strong> Hyperscaler aggregate 2026 CapEx has surged to $700B (+~60% YoY), with 75% directed
+      at AI infrastructure. This validates NVDA's FY27 Data Center consensus of +82% YoY. Meanwhile, the Fed's
+      "no cut" stance with hike optionality adds a modest WACC headwind — our model's 11% base WACC may need
+      revisiting if the 10Y Treasury drifts above 4.6%. Maintain <strong>Strong Buy</strong> with 12-month target <strong>$298</strong>.
+    </div>
+    <div class="warn-box">
+      <strong>Watch:</strong> OpenAI + Broadcom launched the "Jalapeño" AI chip — first credible accelerator outside
+      the AMD/Intel ecosystem to threaten the CUDA moat. NVDA chips also surfacing on China black markets at 2× price,
+      highlighting export control leakage and potential policy escalation risk.
+    </div>
+  </div>
+</div>
+
+<!-- Sentiment -->
+<div class="section">
+  <div class="section-title">Market Sentiment · Cautiously Bullish</div>
+  <div class="card">
+    <div class="sent-bar">
+      <div class="sent-bull" style="width:62%"></div>
+      <div class="sent-neu" style="width:22%"></div>
+      <div class="sent-bear" style="width:16%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px">
+      <span>🟢 Bullish 62%</span><span>⚪ Neutral 22%</span><span>🔴 Bearish 16%</span>
+    </div>
+    <div class="two-col">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:6px;text-transform:uppercase">Key Risks</div>
+        <span class="chip chip-risk">Export controls escalation</span>
+        <span class="chip chip-risk">Jalapeño chip competition</span>
+        <span class="chip chip-warn">Fed rate hike (Oct risk)</span>
+        <span class="chip chip-warn">AI capex cycle peak</span>
+        <span class="chip chip-risk">China black market / policy</span>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:6px;text-transform:uppercase">Near-Term Catalysts</div>
+        <span class="chip chip-cat">Q2 FY27 earnings (Aug)</span>
+        <span class="chip chip-cat">Vera Rubin ramp (H2 2026)</span>
+        <span class="chip chip-cat">Halos / Physical AI deals</span>
+        <span class="chip chip-cat">Europe AI supercomputer orders</span>
+        <span class="chip chip-cat">Hyperscaler spend continues</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NVDA News -->
+<div class="section">
+  <div class="section-title">NVDA News This Week</div>
+  <div class="card">
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-neu">CORPORATE</span>
+        2026 Annual Shareholder Meeting — Blackwell &amp; Vera production ramp focus
+      </div>
+      <div class="news-meta">NVIDIA IR · June 24, 2026 · Jensen Huang reaffirmed national security > China commercial opportunity on chip exports</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bull">PRODUCT</span>
+        BioNeMo Agent Toolkit &amp; Halos — first full-stack Physical AI safety system
+      </div>
+      <div class="news-meta">NVIDIA · June 22, 2026 · Expands software addressable market; Halos targets autonomous vehicles &amp; robotics</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bull">DEMAND</span>
+        Europe unveils record 35 new NVIDIA AI Supercomputers
+      </div>
+      <div class="news-meta">NVIDIA · Week of June 23, 2026 · Signals non-US government demand acceleration</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bear">RISK</span>
+        OpenAI + Broadcom launch "Jalapeño" AI accelerator chip
+      </div>
+      <div class="news-meta">Reuters / Bloomberg · June 2026 · First credible custom silicon threat outside AMD/Intel; potential long-term CUDA moat erosion</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bear">EXPORT</span>
+        NVDA AI chips more than doubled in price on China black market
+      </div>
+      <div class="news-meta">WSJ · June 2026 · Signals unmet demand + risk of policy escalation; Huang flagged national security precedence</div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Sector -->
+<div class="section">
+  <div class="section-title">AI Sector &amp; Hyperscalers</div>
+  <div class="card">
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bull">CAPEX</span>
+        Hyperscalers hit $700B combined 2026 AI spending plans — 75% AI-directed
+      </div>
+      <div class="news-meta">Yahoo Finance / Futurum · June 2026 · Amazon $44.2B Q1 CapEx; Alphabet $35.67B (+100% YoY); MSFT $30.88B (+84% YoY); Meta guides $125-145B</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bull">CLOUD</span>
+        AWS chip revenue hits $20B annualized run rate; Google Cloud backlog $460B+
+      </div>
+      <div class="news-meta">Earnings reports · Q1 2026 · AI workload migration accelerating; NVDA GPU utilization very high</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bull">INFRA</span>
+        Microsoft AI revenue surpasses $37B annual run rate
+      </div>
+      <div class="news-meta">MSFT Q3 FY26 earnings · Copilot + Azure AI driving incremental GPU demand from NVDA</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bear">COMPETITION</span>
+        Custom silicon trend: Google TPU v5, Amazon Trainium2 gaining internal workload share
+      </div>
+      <div class="news-meta">Industry reports · June 2026 · Long-term risk to NVDA's captive hyperscaler spend; near-term impact limited</div>
+    </div>
+  </div>
+</div>
+
+<!-- Macro -->
+<div class="section">
+  <div class="section-title">Macro &amp; Rates</div>
+  <div class="card">
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-warn" style="background:#78350f;color:#fde68a">FOMC</span>
+        Fed holds rates 3.5–3.75%; new chair Warsh signals hike possible in Oct
+      </div>
+      <div class="news-meta">Fed / CNBC · June 17, 2026 · Dot plot erases 2026 cut expectations; median 2026 year-end rate target 3.8% (slight hike)</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bear">INFLATION</span>
+        Iran conflict driving energy supply shock; inflation remains above 2% Fed target
+      </div>
+      <div class="news-meta">Fed Statement · June 2026 · Oil-driven CPI pickup; stagflation lite risk if prolonged</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-bull">ECONOMY</span>
+        US economy expanding at solid pace; productivity and capital investment strong
+      </div>
+      <div class="news-meta">FOMC Statement · June 17, 2026 · Low unemployment, solid GDP growth supports tech spending environment</div>
+    </div>
+    <div class="news-item">
+      <div class="news-headline">
+        <span class="news-tag tag-warn" style="background:#78350f;color:#fde68a">DCF IMPACT</span>
+        Rate hike risk adds ~25–50bps to risk-free rate; NVDA WACC could rise to 11.5–12%
+      </div>
+      <div class="news-meta">Model implication · If rf rises from 4.3% to 4.6–4.8%, base DCF implied price falls ~$10–20 vs current model</div>
+    </div>
+  </div>
+</div>
+
+<!-- Analyst Targets -->
+<div class="section">
+  <div class="section-title">Analyst Price Targets</div>
+  <div class="card">
+    <div class="pt-row"><span style="font-weight:700">Morgan Stanley</span><span style="color:var(--t3)">Overweight</span><span style="color:#4ade80;font-weight:700">$320</span></div>
+    <div class="pt-row"><span style="font-weight:700">Goldman Sachs</span><span style="color:var(--t3)">Buy</span><span style="color:#4ade80;font-weight:700">$310</span></div>
+    <div class="pt-row"><span style="font-weight:700">JPMorgan</span><span style="color:var(--t3)">Overweight</span><span style="color:#4ade80;font-weight:700">$305</span></div>
+    <div class="pt-row"><span style="font-weight:700">Bank of America</span><span style="color:var(--t3)">Buy</span><span style="color:#4ade80;font-weight:700">$300</span></div>
+    <div class="pt-row"><span style="font-weight:700">Wedbush</span><span style="color:var(--t3)">Outperform</span><span style="color:#4ade80;font-weight:700">$360</span></div>
+    <div class="pt-row"><span style="font-weight:700">Mizuho</span><span style="color:var(--t3)">Buy</span><span style="color:#4ade80;font-weight:700">$290</span></div>
+    <div class="pt-row"><span style="font-weight:700">Street Low</span><span style="color:var(--t3)">Hold</span><span style="color:#f87171;font-weight:700">$210</span></div>
+    <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--bd);font-size:11px;color:var(--t3)">
+      Consensus: <strong style="color:#4ade80">$298</strong> avg · 
+      <strong style="color:#4ade80">+49%</strong> vs $200.70 · 
+      38 Buy / 0 Sell (Strong Buy consensus)
+    </div>
+  </div>
+</div>
+
+<!-- DCF Update -->
+<div class="section">
+  <div class="section-title">DCF Model Update</div>
+  <div class="card">
+    <div class="two-col">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:10px">SCENARIO OUTPUTS</div>
+        <div class="pt-row"><span>Bear</span><span style="color:#f87171;font-weight:700">~$80–100</span></div>
+        <div class="pt-row"><span>Base</span><span style="color:#60a5fa;font-weight:700">~$175</span></div>
+        <div class="pt-row"><span>Bull</span><span style="color:#4ade80;font-weight:700">~$380–450</span></div>
+        <div class="pt-row"><span>Current price</span><span style="color:#fde68a;font-weight:700">$200.70</span></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:10px">KEY ASSUMPTIONS (BASE)</div>
+        <div class="pt-row"><span style="color:var(--t3)">WACC</span><span>~11.0%</span></div>
+        <div class="pt-row"><span style="color:var(--t3)">DC FY27 growth</span><span>+82%</span></div>
+        <div class="pt-row"><span style="color:var(--t3)">Op margin yr1</span><span>66%</span></div>
+        <div class="pt-row"><span style="color:var(--t3)">Terminal growth</span><span>3.5%</span></div>
+      </div>
+    </div>
+    <div class="highlight" style="margin-top:12px">
+      Stock trades at ~15% premium to base DCF ($175), consistent with market pricing in a moderate-bull
+      scenario. Full bull realization requires Vera Rubin on schedule, no further export tightening, and
+      sustained $700B+ hyperscaler CapEx through 2027.
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  ⚠️ This report is AI-generated for informational and educational purposes only. Not investment advice. Always consult a qualified financial advisor.<br>
+  Sources: NVIDIA IR, CNBC, Reuters, Yahoo Finance, Goldman Sachs, Fed Reserve · 
+  Generated: June 25, 2026 08:00 UTC · 
+  <a href="../NVDA_DCF_Calculator.html">← Back to DCF Model</a>
+</div>
+
+</body>
+</html>
